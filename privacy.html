@@ -1,0 +1,277 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row =>
+                    row.some(cell => cell !== '' && cell !== null && cell !== undefined)
+                );
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>隱私權保護政策 - 123go形象網站設計</title>
+  <meta name="description" content="123go形象網站設計的隱私權保護政策，說明我們如何收集、使用和保護您的個人資料。">
+  <meta name="keywords" content="隱私權政策, 123go, 網頁設計, 個人資料保護">
+  <meta name="author" content="123go形象網站設計">
+  <!-- Open Graph 標籤 -->
+  <meta property="og:title" content="隱私權保護政策 - 123go形象網站設計">
+  <meta property="og:description" content="123go形象網站設計的隱私權保護政策，說明我們如何收集、使用和保護您的個人資料。">
+  <meta property="og:image" content="https://sql-tech.github.io/123go/img/logo.jpg">
+  <meta property="og:url" content="https://sql-tech.github.io/123go/privacy.html">
+  <meta property="og:type" content="website">
+  <!-- Twitter Card 標籤 -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="隱私權保護政策 - 123go形象網站設計">
+  <meta name="twitter:description" content="123go形象網站設計的隱私權保護政策，說明我們如何收集、使用和保護您的個人資料。">
+  <meta name="twitter:image" content="https://sql-tech.github.io/123go/img/logo.jpg">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      background-color: #f4f6f9;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    nav {
+      background-color: #1e40af;
+      color: white;
+      padding: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    nav button {
+      transition: background-color 0.3s, color 0.3s;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      color: white;
+      font-weight: 500;
+    }
+    nav button:hover {
+      background-color: #2563eb;
+    }
+    footer {
+      background-color: #1f2937;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+    }
+    footer a {
+      color: #93c5fd;
+      text-decoration: underline;
+    }
+    footer a:hover {
+      color: #bfdbfe;
+    }
+    #mobileMenu {
+      transition: transform 0.3s ease-in-out;
+    }
+    @media (max-width: 768px) {
+      nav .desktop-menu {
+        display: none;
+      }
+      nav .mobile-menu-toggle {
+        display: block;
+      }
+      #mobileMenu {
+        position: fixed;
+        top: 4rem;
+        right: 0;
+        width: 75%;
+        max-width: 300px;
+        height: 100%;
+        background-color: #1e40af;
+        transform: translateX(100%);
+        z-index: 50;
+        padding: 1rem;
+        box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+      }
+      #mobileMenu.active {
+        transform: translateX(0);
+      }
+      #mobileMenu button {
+        display: block;
+        width: 100%;
+        text-align: left;
+        margin-bottom: 0.5rem;
+      }
+    }
+    @media (min-width: 769px) {
+      nav .mobile-menu-toggle {
+        display: none;
+      }
+      #mobileMenu {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 導航欄 -->
+  <nav>
+    <div class="container flex justify-between items-center">
+      <a href="./index.html" class="flex items-center">
+        <img src="./img/logo.jpg" alt="123go Logo" class="w-12 h-12 mr-2">
+        <span class="text-2xl font-bold">123go形象網站設計</span>
+      </a>
+      <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+        <svg id="menuIcon" class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+      <div class="desktop-menu flex space-x-2">
+        <button onclick="window.location.href='./index.html#home'">首頁</button>
+        <button onclick="window.location.href='./index.html#news'">最新消息</button>
+        <button onclick="window.location.href='./index.html#services'">產品與服務</button>
+        <button onclick="window.location.href='./index.html#qa'">常見問題</button>
+        <button onclick="window.location.href='./index.html#about'">關於123go</button>
+        <button onclick="window.location.href='./index.html#contact'">聯繫我們</button>
+      </div>
+      <div id="mobileMenu" class="hidden">
+        <button onclick="window.location.href='./index.html#home'; toggleMobileMenu()">首頁</button>
+        <button onclick="window.location.href='./index.html#news'; toggleMobileMenu()">最新消息</button>
+        <button onclick="window.location.href='./index.html#services'; toggleMobileMenu()">產品與服務</button>
+        <button onclick="window.location.href='./index.html#qa'; toggleMobileMenu()">常見問題</button>
+        <button onclick="window.location.href='./index.html#about'; toggleMobileMenu()">關於123go</button>
+        <button onclick="window.location.href='./index.html#contact'; toggleMobileMenu()">聯繫我們</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 主內容 -->
+  <main class="container py-8">
+    <section class="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+      <h1 class="text-3xl font-bold text-[#1f2937] mb-6">隱私權保護政策</h1>
+      <div class="prose max-w-none">
+        <p class="mb-4">123go形象網站設計（以下簡稱「我們」）非常重視您的隱私權。我們致力於保護您提供的個人資料，並確保您的資料安全。以下為我們的隱私權保護政策，說明我們如何收集、使用、保護您的個人資料，以及您享有的相關權利。</p>
+
+        <h2 class="text-2xl font-semibold text-[#1f2937] mt-6 mb-4">1. 資料收集</h2>
+        <p class="mb-4">我們可能會收集您在以下情況下提供的個人資料：</p>
+        <ul class="list-disc pl-6 mb-4">
+          <li>透過聯繫表單提交的資料，例如姓名、電話號碼、電子郵件地址和訊息內容。</li>
+          <li>瀏覽網站時自動收集的非個人化資料，例如 IP 地址、瀏覽器類型、設備資訊和網站使用行為（透過 cookies 或類似技術）。</li>
+        </ul>
+
+        <h2 class="text-2xl font-semibold text-[#1f2937] mt-6 mb-4">2. 資料使用</h2>
+        <p class="mb-4">我們收集的個人資料將用於以下目的：</p>
+        <ul class="list-disc pl-6 mb-4">
+          <li>處理您的詢問或服務請求，例如回覆聯繫表單的問題。</li>
+          <li>改進網站功能和用戶體驗，例如分析網站使用行為以優化內容。</li>
+          <li>遵守法律義務，例如保存必要的記錄。</li>
+        </ul>
+
+        <h2 class="text-2xl font-semibold text-[#1f2937] mt-6 mb-4">3. 資料保護</h2>
+        <p class="mb-4">我們採取多項措施保護您的個人資料，包括但不限於：</p>
+        <ul class="list-disc pl-6 mb-4">
+          <li>使用加密技術（如 SSL）保護資料傳輸安全。</li>
+          <li>限制內部存取權限，僅允許必要人員處理資料。</li>
+          <li>定期檢查和更新安全措施，防止未經授權的存取或洩露。</li>
+        </ul>
+
+        <h2 class="text-2xl font-semibold text-[#1f2937] mt-6 mb-4">4. 用戶權利</h2>
+        <p class="mb-4">您擁有以下權利：</p>
+        <ul class="list-disc pl-6 mb-4">
+          <li>請求存取或更正我們持有的您的個人資料。</li>
+          <li>要求刪除您的個人資料（在法律允許的範圍內）。</li>
+          <li>隨時撤回同意（例如取消訂閱行銷訊息）。</li>
+        </ul>
+        <p class="mb-4">如需行使上述權利，請透過下方聯繫方式與我們聯繫。</p>
+
+        <h2 class="text-2xl font-semibold text-[#1f2937] mt-6 mb-4">5. 聯繫方式</h2>
+        <p class="mb-4">若您對本隱私權政策有任何疑問，或需行使您的權利，請透過以下方式聯繫我們：</p>
+        <ul class="list-disc pl-6 mb-4">
+          <li id="contactLine">Line: <a href="#" target="_blank" class="text-blue-600 hover:underline">點擊聯繫</a></li>
+          <li id="contactEmail">Email: <a href="#" target="_blank" class="text-blue-600 hover:underline">點擊寄送</a></li>
+        </ul>
+
+        <h2 class="text-2xl font-semibold text-[#1f2937] mt-6 mb-4">6. 政策更新</h2>
+        <p class="mb-4">我們可能會不定期更新本隱私權政策，以反映法律要求或服務變更。更新後的政策將發佈於本頁面，並標註生效日期。請定期查看以了解最新內容。</p>
+        <p class="mb-4">生效日期：2025年4月17日</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- 版權聲明 -->
+  <footer>
+    <p>Copyright © 123go.tw All Rights Reserved. <a href="./privacy.html">隱私權保護政策</a></p>
+  </footer>
+
+  <script>
+    let isMobileMenuOpen = false;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadContactLinks();
+    });
+
+    function toggleMobileMenu() {
+      isMobileMenuOpen = !isMobileMenuOpen;
+      const mobileMenu = document.getElementById('mobileMenu');
+      const menuIcon = document.getElementById('menuIcon');
+      mobileMenu.classList.toggle('hidden', !isMobileMenuOpen);
+      mobileMenu.classList.toggle('active', isMobileMenuOpen);
+      menuIcon.innerHTML = isMobileMenuOpen ?
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>' :
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>';
+    }
+
+    async function loadContactLinks() {
+      try {
+        const response = await fetch('./content/about_button.txt');
+        if (!response.ok) throw new Error('Contact buttons not found');
+        const lines = (await response.text()).split('\n').map(line => line.trim());
+        const lineLink = lines[0] || '';
+        const emailLink = lines[1] || '';
+        
+        const lineButton = document.getElementById('contactLine').querySelector('a');
+        const emailButton = document.getElementById('contactEmail').querySelector('a');
+
+        if (lineLink) {
+          lineButton.href = lineLink;
+        } else {
+          lineButton.style.display = 'none';
+        }
+
+        if (emailLink) {
+          emailButton.href = emailLink;
+        } else {
+          emailButton.style.display = 'none';
+        }
+        console.log('Contact links loaded successfully');
+      } catch (error) {
+        console.error('Error loading contact links:', error);
+        document.getElementById('contactLine').style.display = 'none';
+        document.getElementById('contactEmail').style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>

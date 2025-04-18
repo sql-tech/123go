@@ -1,0 +1,916 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row =>
+                    row.some(cell => cell !== '' && cell !== null && cell !== undefined)
+                );
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>123go形象網站設計 - 專業網頁設計與行銷</title>
+  <meta name="description" content="123go形象網站設計提供專業網頁設計、SEO優化與行銷服務，助您打造具吸引力的品牌形象，創造商業價值。">
+  <meta name="keywords" content="網頁設計, SEO優化, 品牌形象, 行銷, 123go, 商業網站">
+  <meta name="author" content="123go形象網站設計">
+  <!-- Open Graph 標籤 -->
+  <meta property="og:title" content="123go形象網站設計 - 專業網頁設計與行銷">
+  <meta property="og:description" content="打造具吸引力的品牌形象，創造商業價值。探索我們的網頁設計與行銷服務！">
+  <meta property="og:image" content="https://sql-tech.github.io/123go/img/logo.jpg">
+  <meta property="og:url" content="https://sql-tech.github.io/123go/">
+  <meta property="og:type" content="website">
+  <!-- Twitter Card 標籤 -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="123go形象網站設計 - 專業網頁設計與行銷">
+  <meta name="twitter:description" content="打造具吸引力的品牌形象，創造商業價值。探索我們的網頁設計與行銷服務！">
+  <meta name="twitter:image" content="https://sql-tech.github.io/123go/img/logo.jpg">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      background-color: #f4f6f9;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    .page {
+      display: none;
+    }
+    .page.active {
+      display: block;
+    }
+    .share-buttons {
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      display: flex;
+      gap: 0.5rem;
+      z-index: 30;
+    }
+    .share-button {
+      transition: transform 0.2s;
+    }
+    .share-button:hover {
+      transform: scale(1.1);
+    }
+    .contact-buttons {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 30;
+    }
+    .contact-button {
+      transition: transform 0.2s;
+    }
+    .contact-button:hover {
+      transform: scale(1.1);
+    }
+    #contactFloatButtons {
+      transition: all 0.3s;
+    }
+    nav {
+      background-color: #1e40af;
+      color: white;
+      padding: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    nav button {
+      transition: background-color 0.3s, color 0.3s;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      color: white;
+      font-weight: 500;
+    }
+    nav button:hover {
+      background-color: #2563eb;
+    }
+    #welcomeScreen {
+      background: linear-gradient(to bottom, #1e40af, #3b82f6);
+      transition: opacity 1s;
+    }
+    #carousel {
+      position: relative;
+      height: 24rem;
+      overflow: hidden;
+      border-radius: 0.5rem;
+      background-color: #e5e7eb;
+    }
+    #carousel img {
+      width: 100%;
+      height: 70%;
+      object-fit: cover;
+      border-radius: 0.5rem 0.5rem 0 0;
+    }
+    #carousel .carousel-controls {
+      position: absolute;
+      top: 50%;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      transform: translateY(-50%);
+      z-index: 10;
+    }
+    #carousel .carousel-controls button {
+      background: rgba(0,0,0,0.5);
+      color: white;
+      padding: 0.75rem;
+      border: none;
+      cursor: pointer;
+      border-radius: 50%;
+      transition: background-color 0.2s;
+    }
+    #carousel .carousel-controls button:hover {
+      background: rgba(0,0,0,0.7);
+    }
+    #carousel .carousel-item {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transition: opacity 1s ease-in-out;
+      background-color: #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      border-radius: 0.5rem;
+    }
+    #carousel .carousel-item.active {
+      opacity: 1;
+      z-index: 5;
+    }
+    #carousel .carousel-item:not(.active) {
+      opacity: 0;
+      z-index: 1;
+    }
+    #carousel .carousel-text {
+      padding: 1rem;
+      text-align: center;
+      color: #1f2937;
+      width: 100%;
+      background-color: rgba(255, 255, 255, 0.9);
+      border-radius: 0 0 0.5rem 0.5rem;
+    }
+    #carousel .carousel-link {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      transition: filter 0.2s;
+    }
+    #carousel .carousel-link:hover {
+      filter: brightness(90%);
+    }
+    .thumbnail {
+      width: 100%;
+      max-width: 100%;
+      height: 150px;
+      object-fit: contain;
+      border-radius: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .grid-item {
+      width: 100%;
+      height: 320px;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    .text-content {
+      height: 120px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .text-content h3 {
+      flex-shrink: 0;
+      margin-bottom: 0.5rem;
+    }
+    .text-content p {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+    }
+    #newsGrid img, #servicesGrid img, #qaList img, #article img, #service img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 0.5rem;
+    }
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .pagination button {
+      margin: 0 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      background-color: #1e40af;
+      color: white;
+      font-weight: 500;
+      transition: all 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .pagination button:hover {
+      background: linear-gradient(to right, #1e40af, #2563eb);
+      transform: scale(1.05);
+    }
+    .pagination button.active {
+      background-color: #1e3a8a;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    footer {
+      background-color: #1f2937;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+    }
+    footer a {
+      color: #93c5fd;
+      text-decoration: underline;
+    }
+    footer a:hover {
+      color: #bfdbfe;
+    }
+    #mobileMenu {
+      transition: transform 0.3s ease-in-out;
+    }
+    @media (max-width: 768px) {
+      nav .desktop-menu {
+        display: none;
+      }
+      nav .mobile-menu-toggle {
+        display: block;
+      }
+      #mobileMenu {
+        position: fixed;
+        top: 4rem;
+        right: 0;
+        width: 75%;
+        max-width: 300px;
+        height: 100%;
+        background-color: #1e40af;
+        transform: translateX(100%);
+        z-index: 50;
+        padding: 1rem;
+        box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+      }
+      #mobileMenu.active {
+        transform: translateX(0);
+      }
+      #mobileMenu button {
+        display: block;
+        width: 100%;
+        text-align: left;
+        margin-bottom: 0.5rem;
+      }
+      #carousel {
+        height: 16rem;
+      }
+      #newsGrid, #servicesGrid {
+        grid-template-columns: 1fr !important;
+      }
+      #welcomeScreen img {
+        width: 300px !important;
+        height: 300px !important;
+      }
+      .thumbnail {
+        height: 120px;
+      }
+      .grid-item {
+        height: 280px;
+      }
+      .text-content {
+        height: 110px;
+      }
+      .logo-text {
+        font-size: 1.25rem !important; /* text-xl */
+        white-space: nowrap !important;
+      }
+      .logo-img {
+        width: 2.5rem !important; /* w-10 */
+        height: 2.5rem !important; /* h-10 */
+        margin-right: 0.25rem !important; /* mr-1 */
+      }
+    }
+    @media (min-width: 769px) {
+      nav .mobile-menu-toggle {
+        display: none;
+      }
+      #mobileMenu {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 歡迎頁面 -->
+  <div id="welcomeScreen" class="fixed inset-0 flex items-center justify-center z-50 transition-opacity duration-1000 opacity-100">
+    <div class="text-center text-white">
+      <img src="./img/logo.jpg" alt="123go Logo" class="mx-auto mb-6 w-[500px] h-[500px]">
+      <h1 class="text-6xl font-bold mb-4">歡迎體驗123go形象網站設計</h1>
+      <p class="text-2xl">專業網頁設計與行銷，打造您的品牌未來</p>
+    </div>
+  </div>
+
+  <!-- 導航欄 -->
+  <nav>
+    <div class="container flex justify-between items-center">
+      <a href="#" onclick="showPage('home')" class="flex items-center">
+        <img src="./img/logo.jpg" alt="123go Logo" class="w-12 h-12 mr-2 logo-img">
+        <span class="text-2xl font-bold logo-text">123go形象網站設計</span>
+      </a>
+      <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+        <svg id="menuIcon" class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+      <div class="desktop-menu flex space-x-2">
+        <button onclick="showPage('home')">首頁</button>
+        <button onclick="showPage('news')">最新消息</button>
+        <button onclick="showPage('services')">產品與服務</button>
+        <button onclick="showPage('qa')">常見問題</button>
+        <button onclick="showPage('about')">關於123go</button>
+        <button onclick="showPage('contact')">聯繫我們</button>
+      </div>
+      <div id="mobileMenu" class="hidden">
+        <button onclick="showPage('home'); toggleMobileMenu()">首頁</button>
+        <button onclick="showPage('news'); toggleMobileMenu()">最新消息</button>
+        <button onclick="showPage('services'); toggleMobileMenu()">產品與服務</button>
+        <button onclick="showPage('qa'); toggleMobileMenu()">常見問題</button>
+        <button onclick="showPage('about'); toggleMobileMenu()">關於123go</button>
+        <button onclick="showPage('contact'); toggleMobileMenu()">聯繫我們</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 分享按鈕（左下角固定） -->
+  <div class="share-buttons">
+    <a id="facebookShare" href="#" target="_blank" class="share-button facebook">
+      <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/10.0.0/facebook.svg" alt="Facebook Share" width="32" height="32" style="fill: #1877F2;">
+    </a>
+    <a id="xShare" href="#" target="_blank" class="share-button x">
+      <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/10.0.0/x.svg" alt="X Share" width="32" height="32" style="fill: #000000;">
+    </a>
+    <a id="instagramShare" href="#" target="_blank" class="share-button instagram">
+      <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/10.0.0/instagram.svg" alt="Instagram Share" width="32" height="32" style="fill: #E4405F;">
+    </a>
+    <a id="lineShare" href="#" target="_blank" class="share-button line">
+      <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/10.0.0/line.svg" alt="Line Share" width="32" height="32" style="fill: #00B900;">
+    </a>
+  </div>
+
+  <!-- 聯繫按鈕（右下角固定，全局顯示，可收折） -->
+  <div class="contact-buttons">
+    <button id="contactToggle" onclick="toggleContactButtons()" class="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700">
+      <svg id="contactToggleIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+      </svg>
+    </button>
+    <div id="contactFloatButtons" class="hidden flex flex-col space-y-2 mt-2">
+      <a id="contactLine" href="#" target="_blank" class="contact-button bg-green-500 text-white p-2 rounded-full hover:bg-green-600">
+        <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/10.0.0/line.svg" alt="Line" width="24" height="24" style="fill: #FFFFFF;">
+      </a>
+      <a id="contactEmail" href="#" target="_blank" class="contact-button bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l9 6 9-6V8l-9 6-9-6z"></path>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- 主內容區域 -->
+  <main class="container py-8">
+    <!-- 首頁 -->
+    <section id="home" class="page">
+      <!-- 輪播 -->
+      <div id="carousel" class="mb-8">
+        <!-- 輪播內容由 JS 動態生成 -->
+        <div class="carousel-controls">
+          <button onclick="prevSlide()">◄</button>
+          <button onclick="nextSlide()">►</button>
+        </div>
+      </div>
+      <!-- 首頁介紹 -->
+      <div id="indexContent" class="prose max-w-none bg-white p-4 rounded-lg shadow mb-8 border border-[#FFF8DC]"></div>
+      <!-- 地圖 -->
+      <div class="bg-white p-4 rounded-lg shadow border border-[#FFF8DC]">
+        <h2 class="text-2xl font-bold mb-4 text-[#000000]">我們的據點</h2>
+        <iframe
+          class="w-full h-96 rounded-lg"
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3614.677409073!2d121.546346!3d25.047166!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3442abca1e7b3b7b%3A0x2a3f7b8c7d7b8c7b!2z5LiJ5Y2X5rGf5aSn5qiT!5e0!3m2!1szh-TW!2stw!4v1634567891234"
+          allowfullscreen=""
+          loading="lazy">
+        </iframe>
+      </div>
+    </section>
+
+    <!-- 最新消息 -->
+    <section id="news" class="page hidden">
+      <h2 class="text-2xl font-bold mb-4 text-[#000000]">最新消息</h2>
+      <div id="newsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+      <div id="newsPagination" class="pagination"></div>
+    </section>
+
+    <!-- 產品與服務 -->
+    <section id="services" class="page hidden">
+      <h2 class="text-2xl font-bold mb-4 text-[#000000]">產品與服務</h2>
+      <div id="servicesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- 常見問題 -->
+    <section id="qa" class="page hidden">
+      <h2 class="text-2xl font-bold mb-4 text-[#000000]">常見問題</h2>
+      <div id="qaList" class="space-y-4"></div>
+    </section>
+
+    <!-- 關於123go -->
+    <section id="about" class="page hidden">
+      <h2 class="text-2xl font-bold mb-4 text-[#000000]">關於123go</h2>
+      <div id="aboutContent" class="prose max-w-none bg-white p-4 rounded-lg shadow mb-8 border border-[#FFF8DC]"></div>
+      <div class="flex space-x-4 mb-8">
+        <a id="aboutLine" href="#" target="_blank" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Line聯繫</a>
+        <a id="aboutEmail" href="#" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Email聯繫</a>
+      </div>
+      <!-- 地圖 -->
+      <div class="bg-white p-4 rounded-lg shadow border border-[#FFF8DC]">
+        <h3 class="text-xl font-bold mb-4 text-[#000000]">我們的據點</h3>
+        <iframe
+          class="w-full h-96 rounded-lg"
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3614.677409073!2d121.546346!3d25.047166!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3442abca1e7b3b7b%3A0x2a3f7b8c7d7b8c7b!2z5LiJ5Y2X5rGf5aSn5qiT!5e0!3m2!1szh-TW!2stw!4v1634567891234"
+          allowfullscreen=""
+          loading="lazy">
+        </iframe>
+      </div>
+    </section>
+
+    <!-- 聯繫我們 -->
+    <section id="contact" class="page hidden">
+      <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 mb-8">
+        <h2 class="text-2xl font-bold mb-6 text-[#000000]">聯繫我們</h2>
+        <form id="contactForm" class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="name" class="block text-sm font-semibold text-gray-700 mb-1">姓名</label>
+              <input type="text" id="name" name="name" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            </div>
+            <div>
+              <label for="phone" class="block text-sm font-semibold text-gray-700 mb-1">連絡電話</label>
+              <input type="tel" id="phone" name="phone" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            </div>
+          </div>
+          <div>
+            <label for="email" class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+            <input type="email" id="email" name="email" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+          </div>
+          <div>
+            <label for="message" class="block text-sm font-semibold text-gray-700 mb-1">問題說明</label>
+            <textarea id="message" name="message" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="5" required></textarea>
+          </div>
+          <div class="text-center">
+            <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">送出</button>
+          </div>
+        </form>
+      </div>
+      <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+        <h2 class="text-2xl font-bold mb-4 text-[#000000]">我們的據點</h2>
+        <iframe
+          class="w-full h-96 rounded-lg"
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3614.677409073!2d121.546346!3d25.047166!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3442abca1e7b3b7b%3A0x2a3f7b8c7d7b8c7b!2z5LiJ5Y2X5rGf5aSn5qiT!5e0!3m2!1szh-TW!2stw!4v1634567891234"
+          allowfullscreen=""
+          loading="lazy">
+        </iframe>
+      </div>
+    </section>
+
+    <!-- 動態文章頁面（最新消息） -->
+    <!-- 由 JS 動態生成 -->
+  </main>
+
+  <!-- 版權聲明 -->
+  <footer>
+    <p>Copyright © 123go.tw All Rights Reserved. <a href="./privacy.html">隱私權保護政策</a></p>
+  </footer>
+
+  <script>
+    const BASE_URL = 'https://sql-tech.github.io/123go/';
+    // 如果更改 GitHub Pages 網址，請修改上面這行的 BASE_URL，例如改為 'https://new-username.github.io/new-repo/'
+
+    let currentSlide = 0;
+    let articles = [];
+    let services = [];
+    let isContactOpen = false;
+    let isMobileMenuOpen = false;
+    let carouselInterval = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // 隱藏歡迎頁面
+      setTimeout(() => {
+        document.getElementById('welcomeScreen').style.opacity = '0';
+        setTimeout(() => {
+          document.getElementById('welcomeScreen').style.display = 'none';
+        }, 1000);
+      }, 3000);
+
+      // 初始化頁面
+      showPage('home');
+      loadShareLinks();
+      loadContactButtons();
+      loadContent('index.txt', 'indexContent');
+      loadNews();
+      loadServices();
+      loadQA();
+      loadContent('about.txt', 'aboutContent');
+
+      // 聯繫表單提交
+      document.getElementById('contactForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = sanitizeInput(document.getElementById('name').value);
+        const phone = sanitizeInput(document.getElementById('phone').value);
+        const email = sanitizeInput(document.getElementById('email').value);
+        const message = sanitizeInput(document.getElementById('message').value);
+
+        try {
+          const response = await fetch('./content/connect.txt');
+          if (!response.ok) throw new Error('Cannot load connect.txt');
+          const [gmailAccount, gmailPassword] = (await response.text()).split('\n').map(line => line.trim());
+          if (!gmailAccount || !gmailPassword) throw new Error('Invalid Gmail credentials');
+          console.log('Sending email via Gmail:', {
+            account: gmailAccount,
+            to: email,
+            subject: '123go聯繫表單',
+            body: `姓名: ${name}\n電話: ${phone}\n問題: ${message}`
+          });
+          alert('表單提交成功！');
+          document.getElementById('contactForm').reset();
+        } catch (error) {
+          console.error('Error sending email:', error);
+          alert('表單提交失敗，請稍後再試。');
+        }
+      });
+    });
+
+    function sanitizeInput(input) {
+      const div = document.createElement('div');
+      div.textContent = input;
+      return div.innerHTML.replace(/[<>]/g, '');
+    }
+
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+    }
+
+    function toggleMobileMenu() {
+      isMobileMenuOpen = !isMobileMenuOpen;
+      const mobileMenu = document.getElementById('mobileMenu');
+      const menuIcon = document.getElementById('menuIcon');
+      mobileMenu.classList.toggle('hidden', !isMobileMenuOpen);
+      mobileMenu.classList.toggle('active', isMobileMenuOpen);
+      menuIcon.innerHTML = isMobileMenuOpen ?
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>' :
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>';
+    }
+
+    async function loadContent(file, elementId) {
+      try {
+        const response = await fetch(`./content/${file}`);
+        if (!response.ok) throw new Error(`Failed to load ${file}`);
+        const content = await response.text();
+        document.getElementById(elementId).innerHTML = content || '沒有內容';
+        console.log(`Loaded ${file} successfully`);
+      } catch (error) {
+        console.error(`Error loading ${file}:`, error);
+        document.getElementById(elementId).innerHTML = '沒有內容';
+      }
+    }
+
+    async function loadShareLinks() {
+      try {
+        const response = await fetch('./content/share.txt');
+        const lines = (await response.text()).split('\n').map(line => line.trim());
+        const links = {
+          facebook: lines[0] ? lines[0].replace('{BASE_URL}', BASE_URL) : `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(BASE_URL)}`,
+          x: lines[1] ? lines[1].replace('{BASE_URL}', BASE_URL) : `https://x.com/intent/tweet?url=${encodeURIComponent(BASE_URL)}`,
+          instagram: lines[2] ? lines[2].replace('{BASE_URL}', BASE_URL) : `https://www.instagram.com/?url=${encodeURIComponent(BASE_URL)}`,
+          line: lines[3] ? lines[3].replace('{BASE_URL}', BASE_URL) : `https://line.me/R/msg/text/?探索123go形象網站設計！%0D%0A${encodeURIComponent(BASE_URL)}`
+        };
+        document.getElementById('facebookShare').href = links.facebook;
+        document.getElementById('xShare').href = links.x;
+        document.getElementById('instagramShare').href = links.instagram;
+        document.getElementById('lineShare').href = links.line;
+        console.log('Share links loaded successfully');
+      } catch (error) {
+        console.error('Error loading share links:', error);
+        document.getElementById('facebookShare').href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(BASE_URL)}`;
+        document.getElementById('xShare').href = `https://x.com/intent/tweet?url=${encodeURIComponent(BASE_URL)}`;
+        document.getElementById('instagramShare').href = `https://www.instagram.com/?url=${encodeURIComponent(BASE_URL)}`;
+        document.getElementById('lineShare').href = `https://line.me/R/msg/text/?探索123go形象網站設計！%0D%0A${encodeURIComponent(BASE_URL)}`;
+      }
+    }
+
+    async function loadContactButtons() {
+      try {
+        const response = await fetch('./content/about_button.txt');
+        if (!response.ok) throw new Error('Contact buttons not found');
+        const lines = (await response.text()).split('\n').map(line => line.trim());
+        const lineLink = lines[0] || '';
+        const emailLink = lines[1] || '';
+        
+        const lineButton = document.getElementById('contactLine');
+        const emailButton = document.getElementById('contactEmail');
+        const aboutLine = document.getElementById('aboutLine');
+        const aboutEmail = document.getElementById('aboutEmail');
+
+        if (lineLink) {
+          lineButton.href = lineLink;
+          lineButton.style.display = 'block';
+          aboutLine.href = lineLink;
+        } else {
+          lineButton.style.display = 'none';
+        }
+
+        if (emailLink) {
+          emailButton.href = emailLink;
+          emailButton.style.display = 'block';
+          aboutEmail.href = emailLink;
+        } else {
+          emailButton.style.display = 'none';
+        }
+        console.log('Contact buttons loaded successfully');
+      } catch (error) {
+        console.error('Error loading contact buttons:', error);
+        document.getElementById('contactLine').style.display = 'block';
+        document.getElementById('contactEmail').style.display = 'block';
+      }
+    }
+
+    function toggleContactButtons() {
+      const buttons = document.getElementById('contactFloatButtons');
+      const toggleIcon = document.getElementById('contactToggleIcon');
+      isContactOpen = !isContactOpen;
+      buttons.classList.toggle('hidden', !isContactOpen);
+      toggleIcon.innerHTML = isContactOpen ? 
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>' :
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>';
+    }
+
+    let newsGridSize = 4;
+    let currentNewsPage = 1;
+
+    async function loadNews() {
+      try {
+        const response = await fetch('./content/news.txt');
+        if (!response.ok) throw new Error('News not found');
+        const content = await response.text();
+        articles = content.split('---').filter(a => a.trim()).map(a => a.trim());
+        if (articles.length === 0) throw new Error('No articles found');
+        console.log('News loaded:', articles);
+
+        const carousel = document.getElementById('carousel');
+        const newsGrid = document.getElementById('newsGrid');
+        const main = document.querySelector('main');
+
+        // 動態生成文章頁面
+        articles.forEach((article, index) => {
+          const articlePage = document.createElement('section');
+          articlePage.id = `article-${index}`;
+          articlePage.className = 'page hidden';
+          const lines = article.split('\n').filter(line => line.trim());
+          const title = lines[0] || (lines[1] ? lines[1] : `新聞項目 ${index + 1}`);
+          articlePage.innerHTML = `
+            <div class="bg-white p-4 rounded-lg shadow border border-[#FFF8DC]">
+              <button onclick="showPage('news')" class="mb-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                返回最新消息
+              </button>
+              <h2 class="text-2xl font-bold mb-4 text-[#000000]">${title}</h2>
+              <img src="./img/news/${index + 1}.jpg" alt="Article ${index + 1}" class="mb-4" onerror="this.style.display='none'">
+              <p>${lines.slice(1).join('<br>')}</p>
+            </div>
+          `;
+          main.appendChild(articlePage);
+        });
+
+        // 輪播
+        carousel.innerHTML = articles.length > 0 ? articles.map((article, index) => {
+          const lines = article.split('\n').filter(line => line.trim());
+          const title = lines[0] || (lines[1] ? lines[1] : `新聞項目 ${index + 1}`);
+          console.log(`Creating carousel item ${index}: ${title}`);
+          return `
+            <div class="carousel-item ${index === 0 ? 'active' : ''}" data-index="${index}">
+              <a href="#" onclick="showPage('article-${index}'); console.log('Clicked article ${index}: ${title}');" class="carousel-link">
+                <img src="./img/news/${index + 1}.jpg" alt="Article ${index + 1}" onerror="this.style.display='none'">
+                <div class="carousel-text">
+                  <h3 class="text-xl font-bold">${title}</h3>
+                </div>
+              </a>
+            </div>
+          `;
+        }).join('') + `
+          <div class="carousel-controls">
+            <button onclick="prevSlide()">◄</button>
+            <button onclick="nextSlide()">►</button>
+          </div>
+        ` : '<div class="text-center text-gray-500 p-4">暫無新聞</div>';
+
+        // 啟動輪播
+        if (articles.length > 0) {
+          updateCarousel();
+          if (carouselInterval) clearInterval(carouselInterval);
+          carouselInterval = setInterval(updateCarousel, 5000);
+        }
+
+        // 新聞網格
+        renderNewsGrid(articles);
+      } catch (error) {
+        console.error('Error loading news:', error);
+        document.getElementById('newsGrid').innerHTML = '無新聞內容';
+        document.getElementById('carousel').innerHTML = '<div class="text-center text-gray-500 p-4">暫無新聞</div>';
+      }
+    }
+
+    function updateCarousel() {
+      const items = document.querySelectorAll('.carousel-item');
+      if (items.length === 0) return;
+      items.forEach((item, i) => {
+        item.classList.toggle('active', i === currentSlide);
+      });
+      currentSlide = (currentSlide + 1) % articles.length;
+      console.log('Carousel updated, current slide:', currentSlide);
+    }
+
+    function prevSlide() {
+      currentSlide = (currentSlide - 1 + articles.length) % articles.length;
+      updateCarousel();
+      if (carouselInterval) {
+        clearInterval(carouselInterval);
+        carouselInterval = setInterval(updateCarousel, 5000);
+      }
+      console.log('Previous slide:', currentSlide);
+    }
+
+    function nextSlide() {
+      currentSlide = (currentSlide + 1) % articles.length;
+      updateCarousel();
+      if (carouselInterval) {
+        clearInterval(carouselInterval);
+        carouselInterval = setInterval(updateCarousel, 5000);
+      }
+      console.log('Next slide:', currentSlide);
+    }
+
+    function renderNewsGrid(articles) {
+      const newsGrid = document.getElementById('newsGrid');
+      const pagination = document.getElementById('newsPagination');
+      const totalPages = Math.ceil(articles.length / newsGridSize);
+      const start = (currentNewsPage - 1) * newsGridSize;
+      const end = start + newsGridSize;
+
+      newsGrid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+      newsGrid.innerHTML = articles.slice(start, end).map((article, index) => {
+        const lines = article.split('\n').filter(line => line.trim());
+        const title = lines[0] || (lines[1] ? lines[1] : `新聞項目 ${start + index + 1}`);
+        return `
+          <div class="bg-white p-4 rounded-lg shadow border border-[#FFF8DC] grid-item">
+            <a href="#" onclick="showPage('article-${start + index}')">
+              <div class="text-content">
+                <h3 class="text-lg font-semibold text-[#000000]">${title}</h3>
+                <p>${lines.slice(1).join('<br>')}</p>
+              </div>
+              <img src="./img/news/${start + index + 1}.jpg" alt="Article ${start + index + 1}" class="thumbnail" onerror="this.style.display='none'">
+            </a>
+          </div>
+        `;
+      }).join('');
+
+      pagination.innerHTML = Array.from({ length: totalPages }, (_, i) => `
+        <button class="${i + 1 === currentNewsPage ? 'active' : ''}" onclick="currentNewsPage=${i + 1}; renderNewsGrid(articles)">${i + 1}</button>
+      `).join('');
+    }
+
+    async function loadServices() {
+      try {
+        const response = await fetch('./content/service.txt');
+        if (!response.ok) throw new Error('Services not found');
+        const content = await response.text();
+        services = content.split('---').filter(s => s.trim());
+        const servicesGrid = document.getElementById('servicesGrid');
+        const main = document.querySelector('main');
+
+        services.forEach((service, index) => {
+          const servicePage = document.createElement('section');
+          servicePage.id = `service-${index}`;
+          servicePage.className = 'page hidden';
+          const lines = service.split('\n').filter(line => line.trim());
+          const title = lines[0] || `服務項目 ${index + 1}`;
+          servicePage.innerHTML = `
+            <div class="bg-white p-4 rounded-lg shadow border border-[#FFF8DC]">
+              <button onclick="showPage('services')" class="mb-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                返回產品與服務
+              </button>
+              <h2 class="text-2xl font-bold mb-4 text-[#000000]">${title}</h2>
+              <img src="./img/service/${index + 1}.jpg" alt="Service ${index + 1}" class="mb-4" onerror="this.style.display='none'">
+              <p>${lines.slice(1).join('<br>')}</p>
+            </div>
+          `;
+          main.appendChild(servicePage);
+        });
+
+        servicesGrid.innerHTML = services.map((service, index) => {
+          const lines = service.split('\n').filter(line => line.trim());
+          const title = lines[0] || `服務項目 ${index + 1}`;
+          return `
+            <div class="bg-white p-4 rounded-lg shadow border border-[#FFF8DC] grid-item">
+              <a href="#" onclick="showPage('service-${index}')">
+                <div class="text-content">
+                  <h3 class="text-lg font-semibold text-[#000000]">${title}</h3>
+                  <p>${lines.slice(1).join('<br>')}</p>
+                </div>
+                <img src="./img/service/${index + 1}.jpg" alt="Service ${index + 1}" class="thumbnail" onerror="this.style.display='none'">
+              </a>
+            </div>
+          `;
+        }).join('');
+        console.log('Services loaded successfully');
+      } catch (error) {
+        console.error('Error loading services:', error);
+        document.getElementById('servicesGrid').innerHTML = '沒有內容';
+      }
+    }
+
+    async function loadQA() {
+      try {
+        const response = await fetch('./content/qa.txt');
+        if (!response.ok) throw new Error('QA not found');
+        const content = await response.text();
+        const qas = content.split('---').filter(q => q.trim());
+        document.getElementById('qaList').innerHTML = qas.map((qa, index) => {
+          const lines = qa.split('\n').filter(line => line.trim());
+          const question = lines[0] || `問題 ${index + 1}`;
+          const answer = lines.slice(1).join('<br>') || '無答案';
+          return `
+            <div class="bg-white p-6 rounded-lg shadow border border-gray-200 mb-4">
+              <div class="mb-4 bg-blue-50 p-4 rounded-md">
+                <h3 class="text-xl font-bold text-[#000000]"><span class="text-blue-600">Q：</span> ${question}</h3>
+              </div>
+              <div class="pl-6">
+                <p class="text-base text-gray-700"><span class="font-semibold text-blue-600">A：</span> ${answer}</p>
+                <img src="./img/qa/${index + 1}.jpg" alt="QA ${index + 1}" class="mt-4" onerror="this.style.display='none'">
+              </div>
+            </div>
+          `;
+        }).join('');
+        console.log('QA loaded successfully');
+      } catch (error) {
+        console.error('Error loading QA:', error);
+        document.getElementById('qaList').innerHTML = '沒有內容';
+      }
+    }
+  </script>
+</body>
+</html>
