@@ -2,6 +2,9 @@
         var gk_isXlsx = false;
         var gk_xlsxFileLookup = {};
         var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
         function loadFileData(filename) {
         if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
             try {
@@ -12,12 +15,19 @@
                 // Convert sheet to JSON to filter blank rows
                 var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
                 // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row =>
-                    row.some(cell => cell !== '' && cell !== null && cell !== undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
                 );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
 
                 // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData); // Create a new sheet from filtered array of arrays
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
                 csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
                 return csv;
             } catch (e) {
@@ -323,13 +333,13 @@
         height: 110px;
       }
       .logo-text {
-        font-size: 1.25rem !important; /* text-xl */
+        font-size: 1.25rem !important;
         white-space: nowrap !important;
       }
       .logo-img {
-        width: 2.5rem !important; /* w-10 */
-        height: 2.5rem !important; /* h-10 */
-        margin-right: 0.25rem !important; /* mr-1 */
+        width: 2.5rem !important;
+        height: 2.5rem !important;
+        margin-right: 0.25rem !important;
       }
     }
     @media (min-width: 769px) {
@@ -487,7 +497,7 @@
     <section id="contact" class="page hidden">
       <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 mb-8">
         <h2 class="text-2xl font-bold mb-6 text-[#000000]">聯繫我們</h2>
-        <form id="contactForm" class="space-y-6">
+        <form id="contactForm" action="https://formspree.io/f/xpwpgbev" method="POST" class="space-y-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label for="name" class="block text-sm font-semibold text-gray-700 mb-1">姓名</label>
@@ -521,9 +531,6 @@
         </iframe>
       </div>
     </section>
-
-    <!-- 動態文章頁面（最新消息） -->
-    <!-- 由 JS 動態生成 -->
   </main>
 
   <!-- 版權聲明 -->
@@ -533,8 +540,6 @@
 
   <script>
     const BASE_URL = 'https://sql-tech.github.io/123go/';
-    // 如果更改 GitHub Pages 網址，請修改上面這行的 BASE_URL，例如改為 'https://new-username.github.io/new-repo/'
-
     let currentSlide = 0;
     let articles = [];
     let services = [];
@@ -564,26 +569,25 @@
       // 聯繫表單提交
       document.getElementById('contactForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const name = sanitizeInput(document.getElementById('name').value);
-        const phone = sanitizeInput(document.getElementById('phone').value);
-        const email = sanitizeInput(document.getElementById('email').value);
-        const message = sanitizeInput(document.getElementById('message').value);
+        const form = e.target;
+        const formData = new FormData(form);
 
         try {
-          const response = await fetch('./content/connect.txt');
-          if (!response.ok) throw new Error('Cannot load connect.txt');
-          const [gmailAccount, gmailPassword] = (await response.text()).split('\n').map(line => line.trim());
-          if (!gmailAccount || !gmailPassword) throw new Error('Invalid Gmail credentials');
-          console.log('Sending email via Gmail:', {
-            account: gmailAccount,
-            to: email,
-            subject: '123go聯繫表單',
-            body: `姓名: ${name}\n電話: ${phone}\n問題: ${message}`
+          const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'Accept': 'application/json'
+            }
           });
-          alert('表單提交成功！');
-          document.getElementById('contactForm').reset();
+          if (response.ok) {
+            alert('表單提交成功！');
+            form.reset();
+          } else {
+            throw new Error('提交失敗');
+          }
         } catch (error) {
-          console.error('Error sending email:', error);
+          console.error('Error submitting form:', error);
           alert('表單提交失敗，請稍後再試。');
         }
       });
