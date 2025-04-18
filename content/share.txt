@@ -1,4 +1,4 @@
-https://www.facebook.com/sharer/sharer.php?u={BASE_URL}
-https://x.com/intent/tweet?url={BASE_URL}
-https://www.instagram.com/?url={BASE_URL}
-https://line.me/R/msg/text/?探索123go形象網站設計！%0D%0A{BASE_URL}
+https://www.facebook.com/sharer/sharer.php?u={https://sql-tech.github.io/123go}
+https://x.com/intent/tweet?url={https://sql-tech.github.io/123go}
+https://www.instagram.com/?url={https://sql-tech.github.io/123go}
+https://line.me/R/msg/text/?探索123go形象網站設計！%0D%0A{https://sql-tech.github.io/123go}
