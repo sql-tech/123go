@@ -580,15 +580,16 @@
               'Accept': 'application/json'
             }
           });
+          const result = await response.json(); // 獲取詳細回應
           if (response.ok) {
             alert('表單提交成功！');
             form.reset();
           } else {
-            throw new Error('提交失敗');
+            throw new Error(`提交失敗: ${result.error || response.statusText}`);
           }
         } catch (error) {
           console.error('Error submitting form:', error);
-          alert('表單提交失敗，請稍後再試。');
+          alert(`表單提交失敗：${error.message}。請稍後再試或聯繫管理員。`);
         }
       });
     });
