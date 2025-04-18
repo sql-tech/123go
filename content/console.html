@@ -480,7 +480,7 @@
                     const startTime = Date.now();
                     const countdownInterval = setInterval(() => {
                         const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                        const remaining = 300 - elapsed;
+                        const remaining = 900 - elapsed;
                         if (remaining <= 0) {
                             clearInterval(countdownInterval);
                             countdownTimer.textContent = '時間到，正在登出...';
