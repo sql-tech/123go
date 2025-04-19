@@ -131,15 +131,14 @@
     #carousel {
       position: relative;
       height: 24rem;
-      overflow: hidden;
       border-radius: 0.5rem;
       background-color: #e5e7eb;
     }
     #carousel .carousel-image-container {
-      width: 100%;
+      width: 70%;
       height: 100%;
       background-color: #e5e7eb;
-      border-radius: 0.5rem 0.5rem 0 0;
+      border-radius: 0.5rem 0 0 0.5rem;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -152,6 +151,14 @@
       object-fit: contain;
       object-position: center;
       border-radius: 0.5rem;
+    }
+    #carousel .carousel-right {
+      width: 30%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
     }
     #carousel .carousel-content {
       width: 100%;
@@ -226,16 +233,12 @@
       width: 100%;
       height: 100%;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       text-decoration: none;
       transition: filter 0.2s;
     }
     #carousel .carousel-link:hover {
       filter: brightness(90%);
-    }
-    #carousel .carousel-link-top {
-      width: 100%;
-      height: 100%;
     }
     .thumbnail {
       width: 100%;
@@ -363,9 +366,15 @@
       }
       #carousel .carousel-image-container {
         width: 100%;
-        height: 100%;
+        height: 70%;
         border-radius: 0.5rem 0.5rem 0 0;
         padding: 0.25rem;
+      }
+      #carousel .carousel-right {
+        width: 100%;
+        height: 30%;
+        display: flex;
+        flex-direction: column;
       }
       #carousel .carousel-content {
         width: 100%;
@@ -381,8 +390,8 @@
         border-bottom-left-radius: 0.5rem;
         border-bottom-right-radius: 0.5rem;
       }
-      #carousel .carousel-link-top {
-        height: 70%;
+      #carousel .carousel-link {
+        flex-direction: column;
       }
       #newsGrid, #servicesGrid {
         grid-template-columns: 1fr !important;
@@ -821,15 +830,15 @@
           return `
             <div class="carousel-item ${index === 0 ? 'active' : ''}" data-index="${index}">
               <a href="#" onclick="showPage('article-${index}'); console.log('Clicked article ${index}: ${title}');" class="carousel-link">
-                <div class="carousel-link-top">
-                  <div class="carousel-image-container">
-                    <img src="./img/news/${index + 1}.jpg" alt="Article ${index + 1}" onerror="this.style.display='none'">
+                <div class="carousel-image-container">
+                  <img src="./img/news/${index + 1}.jpg" alt="Article ${index + 1}" onerror="this.style.display='none'">
+                </div>
+                <div class="carousel-right">
+                  <div class="carousel-text">
+                    <h3 class="text-xl font-bold">${title}</h3>
                   </div>
+                  <div class="carousel-content">${body}</div>
                 </div>
-                <div class="carousel-text">
-                  <h3 class="text-xl font-bold">${title}</h3>
-                </div>
-                <div class="carousel-content">${body}</div>
               </a>
             </div>
           `;
