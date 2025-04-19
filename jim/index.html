@@ -37,7 +37,7 @@
         }
         return gk_fileData[filename] || "";
         }
-        </script>
+        </script>```html
 <script type="text/javascript">
         var gk_isXlsx = false;
         var gk_xlsxFileLookup = {};
@@ -521,7 +521,7 @@
                         const sequence = parseInt(data.sequence) || 0;
                         return `${year}-${month}-${String(sequence + 1).padStart(3, '0')}`;
                     } else {
-                        throw new Error('無法獲取訂單編號');
+                        throw new Error(`獲取訂單編號失敗：${response.status} ${response.statusText}`);
                     }
                 } catch (error) {
                     console.error('獲取訂單編號錯誤:', error);
@@ -538,7 +538,7 @@
                         body: JSON.stringify({})
                     });
                     if (!response.ok) {
-                        throw new Error('無法更新訂單序號');
+                        throw new Error(`更新訂單序號失敗：${response.status} ${response.statusText}`);
                     }
                 } catch (error) {
                     console.error('更新訂單序號錯誤:', error);
@@ -546,7 +546,7 @@
                 }
             }
 
-            // 儲存所有資料到 jim/quote/temp.txt
+            // 儲存所有資料到 jim/quote/temp.txt 或 localStorage
             async function saveQuoteData() {
                 try {
                     const quoteData = {
@@ -564,24 +564,32 @@
                             { name: '折扣', level: discountSelect.value, price: 0, notes: sanitizeInput(discountNotes.value) }
                         ]
                     };
-                    const response = await fetch('/jim/quote/save-temp', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(quoteData)
-                    });
-                    if (response.ok) {
-                        console.log('報價單資料已儲存至 jim/quote/temp.txt');
-                        updateQuotePreview(); // 儲存後立即更新報價單預覽
-                    } else {
-                        throw new Error('無法儲存報價單資料');
+                    try {
+                        const response = await fetch('/jim/quote/save-temp', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(quoteData)
+                        });
+                        if (response.ok) {
+                            console.log('報價單資料已儲存至 jim/quote/temp.txt');
+                            updateQuotePreview();
+                            return;
+                        } else {
+                            throw new Error(`儲存失敗：${response.status} ${response.statusText}`);
+                        }
+                    } catch (error) {
+                        console.warn('後端儲存失敗，改用 localStorage:', error);
                     }
+                    localStorage.setItem('quoteData', JSON.stringify(quoteData));
+                    console.log('報價單資料已儲存至 localStorage');
+                    updateQuotePreview();
                 } catch (error) {
                     console.error('儲存報價單資料錯誤:', error);
-                    alert('儲存報價單資料失敗：' + error.message);
+                    alert(`儲存報價單資料失敗：${error.message}`);
                 }
             }
 
-            // 從 jim/quote/temp.txt 讀取報價單資料
+            // 從 jim/quote/temp.txt 或 localStorage 讀取報價單資料
             async function fetchQuoteData() {
                 try {
                     const response = await fetch('/jim/quote/read-temp', {
@@ -606,25 +614,44 @@
                             ]
                         };
                     } else {
-                        throw new Error('無法讀取報價單資料');
+                        throw new Error(`讀取失敗：${response.status} ${response.statusText}`);
                     }
                 } catch (error) {
-                    console.error('讀取報價單資料錯誤:', error);
-                    return {
-                        clientName: '未輸入',
-                        clientContact: '未輸入',
-                        clientEmail: '未輸入',
-                        clientNotes: '未輸入',
-                        additionalNotes: '未輸入',
-                        services: [
-                            { name: '前端設計', level: 'none', price: 0, notes: '' },
-                            { name: '後端開發', level: 'none', price: 0, notes: '' },
-                            { name: 'SEO', level: 'none', price: 0, notes: '' },
-                            { name: '主機代管', level: 'none', price: 0, notes: '' },
-                            { name: '後續維護', level: 'none', price: 0, notes: '' },
-                            { name: '折扣', level: 'none', price: 0, notes: '' }
-                        ]
-                    };
+                    console.warn('後端讀取失敗，改用 localStorage:', error);
+                    try {
+                        const data = JSON.parse(localStorage.getItem('quoteData') || '{}');
+                        return data || {
+                            clientName: '未輸入',
+                            clientContact: '未輸入',
+                            clientEmail: '未輸入',
+                            clientNotes: '未輸入',
+                            additionalNotes: '未輸入',
+                            services: [
+                                { name: '前端設計', level: 'none', price: 0, notes: '' },
+                                { name: '後端開發', level: 'none', price: 0, notes: '' },
+                                { name: 'SEO', level: 'none', price: 0, notes: '' },
+                                { name: '主機代管', level: 'none', price: 0, notes: '' },
+                                { name: '後續維護', level: 'none', price: 0, notes: '' },
+                                { name: '折扣', level: 'none', price: 0, notes: '' }
+                            ]
+                        };
+                    } catch {
+                        return {
+                            clientName: '未輸入',
+                            clientContact: '未輸入',
+                            clientEmail: '未輸入',
+                            clientNotes: '未輸入',
+                            additionalNotes: '未輸入',
+                            services: [
+                                { name: '前端設計', level: 'none', price: 0, notes: '' },
+                                { name: '後端開發', level: 'none', price: 0, notes: '' },
+                                { name: 'SEO', level: 'none', price: 0, notes: '' },
+                                { name: '主機代管', level: 'none', price: 0, notes: '' },
+                                { name: '後續維護', level: 'none', price: 0, notes: '' },
+                                { name: '折扣', level: 'none', price: 0, notes: '' }
+                            ]
+                        };
+                    }
                 }
             }
 
@@ -662,7 +689,7 @@
                 quoteDateEl.textContent = today.toLocaleDateString('zh-TW');
                 quoteExpiryEl.textContent = expiry.toLocaleDateString('zh-TW');
 
-                // 從 temp.txt 讀取報價單資料
+                // 從 temp.txt 或 localStorage 讀取報價單資料
                 const quoteData = await fetchQuoteData();
 
                 // 更新客戶資訊
@@ -806,7 +833,7 @@
                         console.log(`上傳 ${filename} 至 /jim/quote/${folder} 成功`);
                         return true;
                     } else {
-                        throw new Error(`上傳 ${filename} 失敗`);
+                        throw new Error(`上傳失敗：${response.status} ${response.statusText}`);
                     }
                 } catch (error) {
                     console.error('上傳錯誤:', error);
@@ -823,7 +850,7 @@
                     const wordFilename = `報價單_${orderNumber}.docx`;
                     const pdfFilename = `報價單_${orderNumber}.pdf`;
 
-                    // 從 temp.txt 讀取報價單資料
+                    // 從 temp.txt 或 localStorage 讀取報價單資料
                     const quoteData = await fetchQuoteData();
 
                     // 生成 Word 報價單
