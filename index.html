@@ -332,6 +332,15 @@
     #mobileMenu {
       transition: transform 0.3s ease-in-out;
     }
+    /* 超連結樣式 */
+    a.auto-link {
+      color: #1e40af;
+      text-decoration: underline;
+      transition: color 0.2s;
+    }
+    a.auto-link:hover {
+      color: #2563eb;
+    }
     @media (max-width: 768px) {
       nav .desktop-menu {
         display: none;
@@ -629,6 +638,14 @@
     let isMobileMenuOpen = false;
     let carouselInterval = null;
 
+    // 將 URL 轉換為超連結
+    function convertUrlsToLinks(text) {
+      const urlRegex = /https?:\/\/[^\s<>"']+/g;
+      return text.replace(urlRegex, (url) => {
+        return `<a href="${url}" target="_blank" class="auto-link">${url}</a>`;
+      });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       // 隱藏歡迎頁面
       setTimeout(() => {
@@ -704,11 +721,11 @@
         if (!response.ok) throw new Error(`Failed to load ${file}`);
         const content = await response.text();
         const element = document.getElementById(elementId);
-        element.textContent = content || '沒有內容';
+        element.innerHTML = convertUrlsToLinks(content) || '沒有內容';
         console.log(`Loaded ${file} successfully`);
       } catch (error) {
         console.error(`Error loading ${file}:`, error);
-        document.getElementById(elementId).textContent = '沒有內容';
+        document.getElementById(elementId).innerHTML = '沒有內容';
       }
     }
 
@@ -805,6 +822,7 @@
           articlePage.className = 'page hidden';
           const lines = article.split('\n').filter(line => line.trim());
           const title = lines[0] || (lines[1] ? lines[1] : `新聞項目 ${index + 1}`);
+          const body = lines.slice(1).join('<br>');
           articlePage.innerHTML = `
             <div class="bg-white p-4 rounded-lg shadow border border-[#FFF8DC]">
               <button onclick="showPage('news')" class="mb-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center">
@@ -815,7 +833,7 @@
               </button>
               <h2 class="text-2xl font-bold mb-4 text-[#000000]">${title}</h2>
               <img src="./img/news/${index + 1}.jpg" alt="Article ${index + 1}" class="mb-4" onerror="this.style.display='none'">
-              <p>${lines.slice(1).join('<br>')}</p>
+              <p>${convertUrlsToLinks(body)}</p>
             </div>
           `;
           main.appendChild(articlePage);
@@ -837,7 +855,7 @@
                   <div class="carousel-text">
                     <h3 class="text-xl font-bold">${title}</h3>
                   </div>
-                  <div class="carousel-content">${body}</div>
+                  <div class="carousel-content">${convertUrlsToLinks(body)}</div>
                 </div>
               </a>
             </div>
@@ -906,12 +924,13 @@
       newsGrid.innerHTML = articles.slice(start, end).map((article, index) => {
         const lines = article.split('\n').filter(line => line.trim());
         const title = lines[0] || (lines[1] ? lines[1] : `新聞項目 ${start + index + 1}`);
+        const body = lines.slice(1).join('<br>');
         return `
           <div class="bg-white p-4 rounded-lg shadow border border-[#FFF8DC] grid-item">
             <a href="#" onclick="showPage('article-${start + index}')">
               <div class="text-content">
                 <h3 class="text-lg font-semibold text-[#000000]">${title}</h3>
-                <p>${lines.slice(1).join('<br>')}</p>
+                <p>${convertUrlsToLinks(body)}</p>
               </div>
               <img src="./img/news/${start + index + 1}.jpg" alt="Article ${start + index + 1}" class="thumbnail" onerror="this.style.display='none'">
             </a>
@@ -939,6 +958,7 @@
           servicePage.className = 'page hidden';
           const lines = service.split('\n').filter(line => line.trim());
           const title = lines[0] || `服務項目 ${index + 1}`;
+          const body = lines.slice(1).join('<br>');
           servicePage.innerHTML = `
             <div class="bg-white p-4 rounded-lg shadow border border-[#FFF8DC]">
               <button onclick="showPage('services')" class="mb-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center">
@@ -949,7 +969,7 @@
               </button>
               <h2 class="text-2xl font-bold mb-4 text-[#000000]">${title}</h2>
               <img src="./img/service/${index + 1}.jpg" alt="Service ${index + 1}" class="mb-4" onerror="this.style.display='none'">
-              <p>${lines.slice(1).join('<br>')}</p>
+              <p>${convertUrlsToLinks(body)}</p>
             </div>
           `;
           main.appendChild(servicePage);
@@ -958,12 +978,13 @@
         servicesGrid.innerHTML = services.map((service, index) => {
           const lines = service.split('\n').filter(line => line.trim());
           const title = lines[0] || `服務項目 ${index + 1}`;
+          const body = lines.slice(1).join('<br>');
           return `
             <div class="bg-white p-4 rounded-lg shadow border border-[#FFF8DC] grid-item">
               <a href="#" onclick="showPage('service-${index}')">
                 <div class="text-content">
                   <h3 class="text-lg font-semibold text-[#000000]">${title}</h3>
-                  <p>${lines.slice(1).join('<br>')}</p>
+                  <p>${convertUrlsToLinks(body)}</p>
                 </div>
                 <img src="./img/service/${index + 1}.jpg" alt="Service ${index + 1}" class="thumbnail" onerror="this.style.display='none'">
               </a>
@@ -993,7 +1014,7 @@
                 <h3 class="text-xl font-bold text-[#000000]"><span class="text-blue-600">Q：</span> ${question}</h3>
               </div>
               <div class="pl-6">
-                <p class="text-base text-gray-700"><span class="font-semibold text-blue-600">A：</span> ${answer}</p>
+                <p class="text-base text-gray-700"><span class="font-semibold text-blue-600">A：</span> ${convertUrlsToLinks(answer)}</p>
                 <img src="./img/qa/${index + 1}.jpg" alt="QA ${index + 1}" class="mt-4" onerror="this.style.display='none'">
               </div>
             </div>
