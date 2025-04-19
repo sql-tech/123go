@@ -136,10 +136,10 @@
       background-color: #e5e7eb;
     }
     #carousel .carousel-image-container {
-      width: 100%;
+      width: 40%;
       height: 70%;
       background-color: #e5e7eb;
-      border-radius: 0.5rem 0.5rem 0 0;
+      border-radius: 0.5rem 0 0 0;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -150,7 +150,20 @@
       max-height: 100%;
       object-fit: contain;
       object-position: center;
-      border-radius: 0.5rem 0.5rem 0 0;
+      border-radius: 0.5rem;
+    }
+    #carousel .carousel-content {
+      width: 60%;
+      height: 70%;
+      padding: 1rem;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      text-overflow: ellipsis;
+      color: #1f2937;
+      background-color: rgba(255, 255, 255, 0.9);
+      border-radius: 0 0.5rem 0 0;
     }
     #carousel .carousel-controls {
       position: absolute;
@@ -214,6 +227,12 @@
     #carousel .carousel-link:hover {
       filter: brightness(90%);
     }
+    #carousel .carousel-link-top {
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+      height: 70%;
+    }
     .thumbnail {
       width: 100%;
       max-width: 100%;
@@ -248,6 +267,17 @@
       display: -webkit-box;
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
+    }
+    #indexContent, #aboutContent {
+      white-space: pre-wrap;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #333;
+      padding: 2rem;
+      background-color: #fff;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e5e7eb;
     }
     #newsGrid img, #servicesGrid img, #qaList img, #article img, #service img {
       max-width: 100%;
@@ -328,7 +358,20 @@
         height: 16rem;
       }
       #carousel .carousel-image-container {
-        height: 70%;
+        width: 100%;
+        height: 50%;
+        border-radius: 0.5rem 0.5rem 0 0;
+      }
+      #carousel .carousel-content {
+        width: 100%;
+        height: 20%;
+        border-radius: 0;
+        padding: 0.5rem;
+        font-size: 0.9rem;
+        -webkit-line-clamp: 2;
+      }
+      #carousel .carousel-link-top {
+        flex-direction: column;
       }
       #newsGrid, #servicesGrid {
         grid-template-columns: 1fr !important;
@@ -354,6 +397,11 @@
         width: 2.5rem !important;
         height: 2.5rem !important;
         margin-right: 0.25rem !important;
+      }
+      #indexContent, #aboutContent {
+        padding: 1rem;
+        font-size: 1rem;
+        line-height: 1.6;
       }
     }
     @media (min-width: 769px) {
@@ -594,7 +642,7 @@
               'Accept': 'application/json'
             }
           });
-          const result = await response.json(); // 獲取詳細回應
+          const result = await response.json();
           if (response.ok) {
             alert('表單提交成功！');
             form.reset();
@@ -635,11 +683,12 @@
         const response = await fetch(`./content/${file}`);
         if (!response.ok) throw new Error(`Failed to load ${file}`);
         const content = await response.text();
-        document.getElementById(elementId).innerHTML = content || '沒有內容';
+        const element = document.getElementById(elementId);
+        element.textContent = content || '沒有內容';
         console.log(`Loaded ${file} successfully`);
       } catch (error) {
         console.error(`Error loading ${file}:`, error);
-        document.getElementById(elementId).innerHTML = '沒有內容';
+        document.getElementById(elementId).textContent = '沒有內容';
       }
     }
 
@@ -756,12 +805,16 @@
         carousel.innerHTML = articles.length > 0 ? articles.map((article, index) => {
           const lines = article.split('\n').filter(line => line.trim());
           const title = lines[0] || (lines[1] ? lines[1] : `新聞項目 ${index + 1}`);
+          const body = lines.slice(1).join(' ');
           console.log(`Creating carousel item ${index}: ${title}`);
           return `
             <div class="carousel-item ${index === 0 ? 'active' : ''}" data-index="${index}">
               <a href="#" onclick="showPage('article-${index}'); console.log('Clicked article ${index}: ${title}');" class="carousel-link">
-                <div class="carousel-image-container">
-                  <img src="./img/news/${index + 1}.jpg" alt="Article ${index + 1}" onerror="this.style.display='none'">
+                <div class="carousel-link-top">
+                  <div class="carousel-image-container">
+                    <img src="./img/news/${index + 1}.jpg" alt="Article ${index + 1}" onerror="this.style.display='none'">
+                  </div>
+                  <div class="carousel-content">${body}</div>
                 </div>
                 <div class="carousel-text">
                   <h3 class="text-xl font-bold">${title}</h3>
