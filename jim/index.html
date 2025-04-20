@@ -37,6 +37,45 @@
         }
         return gk_fileData[filename] || "";
         }
+        </script><script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
         </script><!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -249,7 +288,7 @@
                         <select id="frontendLevel">
                             <option value="none">不選擇</option>
                             <option value="basic">基礎 ($10,000)</option>
-                            <option value="advanced">進階 ($20,000)</option Distance Learning Courses
+                            <option value="advanced">進階 ($20,000)</option>
                             <option value="premium">高階 ($30,000)</option>
                         </select>
                     </div>
@@ -258,16 +297,16 @@
                         <input type="text" id="frontendNotes" placeholder="輸入自訂功能（例如：留言板、寄信模組）">
                     </div>
                 </div>
-                <!-- 後端開發 -->
+                <!-- 後端設計 -->
                 <div class="card">
                     <h2>後端開發</h2>
                     <div class="input-group">
                         <label for="backendLevel">選擇服務層級</label>
                         <select id="backendLevel">
                             <option value="none">不選擇</option>
-                            <option value="basic">基礎 ($8,000)</option>
-                            <option value="advanced">進階 ($15,000)</option>
-                            <option value="premium">高階 ($25,000)</option>
+                            <option value="basic">基礎 ($13,000)</option>
+                            <option value="advanced">進階 ($23,000)</option>
+                            <option value="premium">高階 ($33,000)</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -299,9 +338,9 @@
                         <label for="hostingLevel">選擇服務層級</label>
                         <select id="hostingLevel">
                             <option value="none">不選擇</option>
-                            <option value="basic">基礎 ($500/年)</option>
-                            <option value="advanced">進階 ($1,500/年)</option>
-                            <option value="premium">高階 ($3,000/年)</option>
+                            <option value="basic">基礎 ($2,000/年)</option>
+                            <option value="advanced">進階 ($3,000/年)</option>
+                            <option value="premium">高階 ($5,000/年)</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -316,9 +355,9 @@
                         <label for="maintenanceLevel">選擇服務層級</label>
                         <select id="maintenanceLevel">
                             <option value="none">不選擇</option>
-                            <option value="basic">基礎 ($1,000/月)</option>
-                            <option value="advanced">進階 ($2,500/月)</option>
-                            <option value="premium">高階 ($5,000/月)</option>
+                            <option value="basic">基礎 ($2,200/月)</option>
+                            <option value="advanced">進階 ($3,500/月)</option>
+                            <option value="premium">高階 ($5,200/月)</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -333,7 +372,12 @@
                         <label for="discount">選擇折扣</label>
                         <select id="discount">
                             <option value="none">無折扣</option>
-                            <option value="full">全包折扣 (10%)</option>
+                            <option value="full5">全包折扣 (5%)</option>
+                            <option value="full10">全包折扣 (10%)</option>
+                            <option value="full15">全包折扣 (15%)</option>
+                            <option value="full20">全包折扣 (20%)</option>
+                            <option value="full25">全包折扣 (25%)</option>
+                            <option value="full30">全包折扣 (30%)</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -347,6 +391,34 @@
                     <div class="input-group">
                         <label for="additionalNotes">補充說明</label>
                         <textarea id="additionalNotes" placeholder="輸入補充說明"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label for="useTax">是否使用營業稅</label>
+                        <select id="useTax">
+                            <option value="use-tax" selected>使用營業稅</option>
+                            <option value="no-tax">不使用營業稅</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="salesRole">報價人員職稱</label>
+                        <select id="salesRole">
+                            <option value="salesRep" selected>業務專員</option>
+                            <option value="assistantManager">業務副理</option>
+                            <option value="manager">業務經理</option>
+                            <option value="ceo">執行長</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="salesName">報價人員姓名</label>
+                        <input type="text" id="salesName" placeholder="輸入報價人員姓名">
+                    </div>
+                    <div class="input-group">
+                        <label for="salesContact">報價人員電話/Line</label>
+                        <input type="text" id="salesContact" placeholder="輸入電話或Line ID">
+                    </div>
+                    <div class="input-group">
+                        <label for="salesEmail">報價人員 E-mail</label>
+                        <input type="email" id="salesEmail" placeholder="輸入E-mail">
                     </div>
                     <button id="confirm-notes-btn" class="btn">確定帶入報價單</button>
                 </div>
@@ -380,7 +452,7 @@
                                 <td colspan="2" class="border p-2 text-right font-semibold">折扣</td>
                                 <td id="discount-amount" class="border p-2">0</td>
                             </tr>
-                            <tr>
+                            <tr id="tax-row">
                                 <td colspan="2" class="border p-2 text-right font-semibold">營業稅 (5%)</td>
                                 <td id="tax" class="border p-2">0</td>
                             </tr>
@@ -391,21 +463,37 @@
                         </tfoot>
                     </table>
                     <p class="mt-4">付款條款：30% 訂金，50% 初稿完成後，20% 上線後。</p>
-                    <p>備註：包含 2 次免費修改，額外修改每次 500 元。專案預計 6 週完成。</p>
+                    <p>備註：包含 2 次免費修改，額外修改每次 5,000 元。專案預計 6 週完成。</p>
                     <p><strong>補充說明：</strong> <span id="preview-additionalNotes">未輸入</span></p>
+                    <div id="payment-terms" class="mt-4">
+                        <p><strong>付款條款：</strong></p>
+                        <ul class="list-disc pl-5">
+                            <li>30% 訂金：<span id="deposit">NT$ 0</span></li>
+                            <li>50% 初稿完成後：<span id="draft">NT$ 0</span></li>
+                            <li>20% 上線後：<span id="launch">NT$ 0</span></li>
+                        </ul>
+                    </div>
+                    <div id="sales-info" class="mt-4">
+                        <p><strong>報價人員職稱：</strong> <span id="preview-salesRole">未輸入</span></p>
+                        <p><strong>報價人員姓名：</strong> <span id="preview-salesName">未輸入</span></p>
+                        <p><strong>報價人員電話/Line：</strong> <span id="preview-salesContact">未輸入</span></p>
+                        <p><strong>報價人員 E-mail：</strong> <span id="preview-salesEmail">未輸入</span></p>
+                    </div>
                 </div>
                 <!-- 產生報價單按鈕 -->
                 <button id="generate-quote-btn" class="btn">產生報價單</button>
+                <!-- 清除報價單內容按鈕 -->
+                <button id="clear-quote-btn" class="btn">清除報價單內容</button>
             </div>
         </div>
     </div>
 
     <script>
-        // *** 修復：儲存 PAT 的全域變數 ***
+        // 儲存 PAT 的全域變數
         let githubPAT = '';
-
-        // *** 修復：獲取訂單編號，使用 GitHub Issues API ***
         let isFetchingOrderNumber = false; // 防抖控制
+
+        // 獲取訂單編號，使用 sql-tech/database 的 Issue #2
         async function getOrderNumber() {
             if (isFetchingOrderNumber) {
                 console.warn('正在獲取訂單編號，請稍後...');
@@ -427,40 +515,45 @@
             try {
                 for (let i = 0; i < retries; i++) {
                     try {
-                        // 讀取 Issue #1 的評論
-                        const response = await fetch('https://api.github.com/repos/sql-tech/database/issues/1/comments', {
+                        // 讀取 sql-tech/database 的 Issue #2 評論
+                        const response = await fetch('https://api.github.com/repos/sql-tech/database/issues/2/comments', {
                             headers: {
                                 'Authorization': `token ${githubPAT}`,
                                 'Accept': 'application/vnd.github.v3+json'
                             }
                         });
                         if (!response.ok) {
-                            throw new Error(`無法獲取評論：${response.status} ${response.statusText}`);
+                            const errorData = await response.json().catch(() => ({}));
+                            throw new Error(`無法獲取評論：${response.status} ${response.statusText} ${errorData.message || ''}`);
                         }
                         const comments = await response.json();
+                        console.log('從 GitHub Issue #2 讀取的評論:', comments);
                         const lastComment = comments.length > 0 ? comments[comments.length - 1].body : '';
                         const match = lastComment.match(new RegExp(`${key}: (\\d+)`));
                         let sequence = match ? parseInt(match[1]) + 1 : 1;
+                        console.log(`計算的序列號: ${sequence}`);
 
-                        // 寫入新評論，使用github的issue功能達成，先在github上開設一個不公開的儲存庫database，然後建立issue，再透過api儲存
-                        const updateResponse = await fetch('https://api.github.com/repos/sql-tech/database/issues/1/comments', {
+                        // 寫入新評論
+                        const updateResponse = await fetch('https://api.github.com/repos/sql-tech/database/issues/2/comments', {
                             method: 'POST',
                             headers: {
                                 'Authorization': `token ${githubPAT}`,
                                 'Accept': 'application/vnd.github.v3+json',
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({ body: `${key}: ${sequence.toString().padStart(3, '0')}` })
+                            body: JSON.stringify({ body: `${key}: ${sequence.toString().padStart(5, '0')}` })
                         });
                         if (!updateResponse.ok) {
-                            throw new Error(`無法寫入評論：${updateResponse.status} ${updateResponse.statusText}`);
+                            const errorData = await updateResponse.json().catch(() => ({}));
+                            throw new Error(`無法寫入評論：${updateResponse.status} ${updateResponse.statusText} ${errorData.message || ''}`);
                         }
+                        console.log(`成功寫入新評論: ${key}: ${sequence.toString().padStart(5, '0')}`);
 
-                        return `${year}-${month}-${sequence.toString().padStart(3, '0')}`;
+                        return `${year}-${month}-${sequence.toString().padStart(5, '0')}`;
                     } catch (error) {
                         if (error.message.includes('409') && i < retries - 1) {
                             console.warn('檢測到並發衝突，重試中...');
-                            await new Promise(resolve => setTimeout(resolve, 1000)); // 等待 1 秒
+                            await new Promise(resolve => setTimeout(resolve, 1000));
                             continue;
                         }
                         throw error;
@@ -470,13 +563,12 @@
             } catch (error) {
                 console.error('獲取訂單編號錯誤:', error);
                 alert(`獲取訂單編號失敗：${error.message}`);
-                return `${year}-${month}-001`; // 後備編號
+                return `${year}-${month}-00001`;
             } finally {
                 isFetchingOrderNumber = false;
             }
         }
 
-        // *** 修復：移除 updateOrderNumber，因為序號更新已合併 ***
         async function updateOrderNumber() {
             // 空函數，序號更新由 getOrderNumber 處理
         }
@@ -493,6 +585,11 @@
             const clientEmail = document.getElementById('clientEmail');
             const clientNotes = document.getElementById('clientNotes');
             const additionalNotes = document.getElementById('additionalNotes');
+            const useTax = document.getElementById('useTax');
+            const salesRole = document.getElementById('salesRole');
+            const salesName = document.getElementById('salesName');
+            const salesContact = document.getElementById('salesContact');
+            const salesEmail = document.getElementById('salesEmail');
             const confirmNotesBtn = document.getElementById('confirm-notes-btn');
             const frontendLevel = document.getElementById('frontendLevel');
             const backendLevel = document.getElementById('backendLevel');
@@ -510,6 +607,7 @@
             const subtotalEl = document.getElementById('subtotal');
             const discountAmountEl = document.getElementById('discount-amount');
             const taxEl = document.getElementById('tax');
+            const taxRow = document.getElementById('tax-row');
             const totalEl = document.getElementById('total');
             const orderNumberEl = document.getElementById('order-number');
             const quoteDateEl = document.getElementById('quote-date');
@@ -519,15 +617,42 @@
             const previewClientEmail = document.getElementById('preview-clientEmail');
             const previewClientNotes = document.getElementById('preview-clientNotes');
             const previewAdditionalNotes = document.getElementById('preview-additionalNotes');
+            const previewSalesRole = document.getElementById('preview-salesRole');
+            const previewSalesName = document.getElementById('preview-salesName');
+            const previewSalesContact = document.getElementById('preview-salesContact');
+            const previewSalesEmail = document.getElementById('preview-salesEmail');
+            const depositEl = document.getElementById('deposit');
+            const draftEl = document.getElementById('draft');
+            const launchEl = document.getElementById('launch');
             const generateQuoteBtn = document.getElementById('generate-quote-btn');
+            const clearQuoteBtn = document.getElementById('clear-quote-btn');
 
             // 價格表
             const prices = {
                 frontend: { basic: 10000, advanced: 20000, premium: 30000 },
-                backend: { basic: 8000, advanced: 15000, premium: 25000 },
+                backend: { basic: 13000, advanced: 23000, premium: 33000 },
                 seo: { basic: 5000, advanced: 10000, premium: 20000 },
-                hosting: { basic: 500, advanced: 1500, premium: 3000 },
-                maintenance: { basic: 1000, advanced: 2500, premium: 5000 }
+                hosting: { basic: 2000, advanced: 3000, premium: 5000 },
+                maintenance: { basic: 2200, advanced: 3500, premium: 5200 }
+            };
+
+            // 折扣百分比表
+            const discountRates = {
+                none: 0,
+                full5: 0.05,
+                full10: 0.10,
+                full15: 0.15,
+                full20: 0.20,
+                full25: 0.25,
+                full30: 0.30
+            };
+
+            // 職稱對應顯示名稱
+            const roleDisplayNames = {
+                salesRep: '業務專員',
+                assistantManager: '業務副理',
+                manager: '業務經理',
+                ceo: '執行長'
             };
 
             // 清理輸入以防止 XSS
@@ -552,6 +677,11 @@
                         clientEmail: sanitizeInput(clientEmail.value),
                         clientNotes: sanitizeInput(clientNotes.value),
                         additionalNotes: sanitizeInput(additionalNotes.value),
+                        useTax: useTax.value,
+                        salesRole: salesRole.value,
+                        salesName: sanitizeInput(salesName.value),
+                        salesContact: sanitizeInput(salesContact.value),
+                        salesEmail: sanitizeInput(salesEmail.value),
                         services: [
                             { name: '前端設計', level: frontendLevel.value, price: prices.frontend[frontendLevel.value] || 0, notes: sanitizeInput(frontendNotes.value) },
                             { name: '後端開發', level: backendLevel.value, price: prices.backend[backendLevel.value] || 0, notes: sanitizeInput(backendNotes.value) },
@@ -588,6 +718,27 @@
 
             // 從後端或 localStorage 讀取報價單資料
             async function fetchQuoteData() {
+                const defaultQuoteData = {
+                    clientName: '未輸入',
+                    clientContact: '未輸入',
+                    clientEmail: '未輸入',
+                    clientNotes: '未輸入',
+                    additionalNotes: '未輸入',
+                    useTax: 'use-tax',
+                    salesRole: 'salesRep',
+                    salesName: '未輸入',
+                    salesContact: '未輸入',
+                    salesEmail: '未輸入',
+                    services: [
+                        { name: '前端設計', level: 'none', price: 0, notes: '' },
+                        { name: '後端開發', level: 'none', price: 0, notes: '' },
+                        { name: 'SEO', level: 'none', price: 0, notes: '' },
+                        { name: '主機代管', level: 'none', price: 0, notes: '' },
+                        { name: '後續維護', level: 'none', price: 0, notes: '' },
+                        { name: '折扣', level: 'none', price: 0, notes: '' }
+                    ]
+                };
+
                 try {
                     const response = await fetch('/jim/quote/read-temp', {
                         method: 'GET',
@@ -595,70 +746,55 @@
                     });
                     if (response.ok) {
                         const data = await response.json();
-                        return data || {
-                            clientName: '未輸入',
-                            clientContact: '未輸入',
-                            clientEmail: '未輸入',
-                            clientNotes: '未輸入',
-                            additionalNotes: '未輸入',
-                            services: [
-                                { name: '前端設計', level: 'none', price: 0, notes: '' },
-                                { name: '後端開發', level: 'none', price: 0, notes: '' },
-                                { name: 'SEO', level: 'none', price: 0, notes: '' },
-                                { name: '主機代管', level: 'none', price: 0, notes: '' },
-                                { name: '後續維護', level: 'none', price: 0, notes: '' },
-                                { name: '折扣', level: 'none', price: 0, notes: '' }
-                            ]
-                        };
+                        console.log('從後端讀取的報價資料:', data);
+                        // 確保返回的資料包含 services 陣列
+                        if (data && Array.isArray(data.services)) {
+                            return data;
+                        } else {
+                            console.warn('後端資料缺少 services，改用預設資料');
+                            return defaultQuoteData;
+                        }
                     } else {
                         throw new Error(`讀取失敗：${response.status} ${response.statusText}`);
                     }
                 } catch (error) {
                     console.warn('後端讀取失敗，改用 localStorage:', error);
                     try {
-                        const data = JSON.parse(localStorage.getItem('quoteData') || '{}');
-                        return data || {
-                            clientName: '未輸入',
-                            clientContact: '未輸入',
-                            clientEmail: '未輸入',
-                            clientNotes: '未輸入',
-                            additionalNotes: '未輸入',
-                            services: [
-                                { name: '前端設計', level: 'none', price: 0, notes: '' },
-                                { name: '後端開發', level: 'none', price: 0, notes: '' },
-                                { name: 'SEO', level: 'none', price: 0, notes: '' },
-                                { name: '主機代管', level: 'none', price: 0, notes: '' },
-                                { name: '後續維護', level: 'none', price: 0, notes: '' },
-                                { name: '折扣', level: 'none', price: 0, notes: '' }
-                            ]
-                        };
-                    } catch {
-                        return {
-                            clientName: '未輸入',
-                            clientContact: '未輸入',
-                            clientEmail: '未輸入',
-                            clientNotes: '未輸入',
-                            additionalNotes: '未輸入',
-                            services: [
-                                { name: '前端設計', level: 'none', price: 0, notes: '' },
-                                { name: '後端開發', level: 'none', price: 0, notes: '' },
-                                { name: 'SEO', level: 'none', price: 0, notes: '' },
-                                { name: '主機代管', level: 'none', price: 0, notes: '' },
-                                { name: '後續維護', level: 'none', price: 0, notes: '' },
-                                { name: '折扣', level: 'none', price: 0, notes: '' }
-                            ]
-                        };
+                        const rawData = localStorage.getItem('quoteData');
+                        if (!rawData) {
+                            console.log('localStorage 無資料，返回預設資料');
+                            return defaultQuoteData;
+                        }
+                        const data = JSON.parse(rawData);
+                        console.log('從 localStorage 讀取的報價資料:', data);
+                        // 檢查資料是否包含 services 陣列
+                        if (data && Array.isArray(data.services)) {
+                            return data;
+                        } else {
+                            console.warn('localStorage 資料無效，清除並返回預設資料');
+                            localStorage.removeItem('quoteData');
+                            return defaultQuoteData;
+                        }
+                    } catch (parseError) {
+                        console.error('解析 localStorage 資料失敗:', parseError);
+                        localStorage.removeItem('quoteData');
+                        return defaultQuoteData;
                     }
                 }
             }
 
-            // 重置畫面
+            // 重置表單
             function resetForm() {
                 clientName.value = '';
                 clientContact.value = '';
                 clientEmail.value = '';
                 clientNotes.value = '';
                 additionalNotes.value = '';
+                useTax.value = 'use-tax';
+                salesRole.value = 'salesRep';
+                salesName.value = '';
+                salesContact.value = '';
+                salesEmail.value = '';
                 frontendLevel.value = 'none';
                 backendLevel.value = 'none';
                 seoLevel.value = 'none';
@@ -671,6 +807,9 @@
                 hostingNotes.value = '';
                 maintenanceNotes.value = '';
                 discountNotes.value = '';
+                // 清除 localStorage 中的報價資料
+                localStorage.removeItem('quoteData');
+                localStorage.removeItem('lastOrderNumber');
                 updateQuotePreview();
             }
 
@@ -680,24 +819,33 @@
                 const expiry = new Date(today);
                 expiry.setDate(today.getDate() + 30);
 
-                // 更新訂單編號與日期
-                const orderNumber = await getOrderNumber();
-                orderNumberEl.textContent = `報價單編號：${orderNumber || '載入中...'}`;
+                // 使用 localStorage 中的上次訂單編號，若無則顯示「載入中...」
+                const lastOrderNumber = localStorage.getItem('lastOrderNumber') || '載入中...';
+                orderNumberEl.textContent = `報價單編號：${lastOrderNumber}`;
                 quoteDateEl.textContent = today.toLocaleDateString('zh-TW');
                 quoteExpiryEl.textContent = expiry.toLocaleDateString('zh-TW');
 
                 // 從後端或 localStorage 讀取報價單資料
                 const quoteData = await fetchQuoteData();
+                console.log('更新報價預覽的 quoteData:', quoteData);
 
                 // 更新客戶資訊
-                previewClientName.textContent = quoteData.clientName;
-                previewClientContact.textContent = quoteData.clientContact;
-                previewClientEmail.textContent = quoteData.clientEmail;
-                previewClientNotes.textContent = quoteData.clientNotes;
-                previewAdditionalNotes.textContent = quoteData.additionalNotes;
+                previewClientName.textContent = quoteData.clientName || '未輸入';
+                previewClientContact.textContent = quoteData.clientContact || '未輸入';
+                previewClientEmail.textContent = quoteData.clientEmail || '未輸入';
+                previewClientNotes.textContent = quoteData.clientNotes || '未輸入';
+                previewAdditionalNotes.textContent = quoteData.additionalNotes || '未輸入';
+                useTax.value = quoteData.useTax || 'use-tax';
 
-                // 更新服務項目
-                const selectedServices = quoteData.services;
+                // 更新業務人員資訊
+                previewSalesRole.textContent = roleDisplayNames[quoteData.salesRole] || '未輸入';
+                previewSalesName.textContent = quoteData.salesName || '未輸入';
+                previewSalesContact.textContent = quoteData.salesContact || '未輸入';
+                previewSalesEmail.textContent = quoteData.salesEmail || '未輸入';
+
+                // 更新服務項目，確保 services 是陣列
+                const selectedServices = Array.isArray(quoteData.services) ? quoteData.services : [];
+                console.log('selectedServices:', selectedServices);
 
                 // 更新表格
                 quoteTableBody.innerHTML = '';
@@ -711,32 +859,39 @@
                         const displayName = service.notes ? `${service.name}（${service.notes}）` : service.name;
                         row.innerHTML = `
                             <td class="border p-2">${displayName}</td>
-                            <td class="border p-2">${service.level === 'basic' ? '基礎' : service.level === 'advanced' ? '進階' : service.level === 'premium' ? '高階' : service.level === 'full' ? '全包折扣' : '無'}</td>
+                            <td class="border p-2">${service.level === 'basic' ? '基礎' : service.level === 'advanced' ? '進階' : service.level === 'premium' ? '高階' : service.level.startsWith('full') ? `全包折扣 (${service.level.replace('full', '')}%)` : '無'}</td>
                             <td class="border p-2">${service.price.toLocaleString()}</td>
                         `;
                         quoteTableBody.appendChild(row);
                     }
                 });
 
-                // 計算折扣與稅金
+                // 計算折扣與稅金（四捨五入）
                 let discount = 0;
                 const hasAllServices = selectedServices.slice(0, 5).every(s => s.level !== 'none');
-                if (selectedServices.find(s => s.name === '折扣').level === 'full' && hasAllServices) {
-                    discount = subtotal * 0.1;
+                const discountLevel = selectedServices.find(s => s.name === '折扣')?.level || 'none';
+                if (discountLevel !== 'none' && hasAllServices) {
+                    discount = Math.round(subtotal * discountRates[discountLevel]);
                 }
-                const tax = (subtotal - discount) * 0.05;
-                const total = subtotal - discount + tax;
+                const tax = useTax.value === 'use-tax' ? Math.round((subtotal - discount) * 0.05) : 0;
+                const total = Math.round(subtotal - discount + tax);
 
                 // 更新顯示
                 subtotalEl.textContent = subtotal.toLocaleString();
                 discountAmountEl.textContent = discount.toLocaleString();
                 taxEl.textContent = tax.toLocaleString();
+                taxRow.style.display = useTax.value === 'use-tax' ? '' : 'none';
                 totalEl.textContent = total.toLocaleString();
+
+                // 更新付款條款金額（四捨五入）
+                depositEl.textContent = `NT$ ${Math.round(total * 0.3).toLocaleString()}`;
+                draftEl.textContent = `NT$ ${Math.round(total * 0.5).toLocaleString()}`;
+                launchEl.textContent = `NT$ ${Math.round(total * 0.2).toLocaleString()}`;
             }
 
             // 驗證與登出按鈕
             authBtn.addEventListener('click', async () => {
-                console.log('驗證按鈕點擊'); // *** 修復：添加日誌確認事件觸發 ***
+                console.log('驗證按鈕點擊');
                 if (patInput.disabled) {
                     // 已驗證，執行登出
                     location.reload();
@@ -753,20 +908,31 @@
                         }
 
                         // 驗證 PAT
-                        const response = await fetch('https://api.github.com/user', {
+                        const userResponse = await fetch('https://api.github.com/user', {
                             headers: {
                                 'Authorization': `token ${pat}`,
                                 'Accept': 'application/vnd.github.v3+json'
                             }
                         });
-                        if (!response.ok) {
-                            const errorData = await response.json().catch(() => ({}));
-                            const errorMsg = errorData.message || response.statusText;
+                        if (!userResponse.ok) {
+                            const errorData = await userResponse.json().catch(() => ({}));
+                            const errorMsg = errorData.message || userResponse.statusText;
                             throw new Error(`PAT 驗證失敗：${errorMsg}`);
                         }
 
+                        // 檢查 sql-tech/database 存取權限
+                        const repoResponse = await fetch('https://api.github.com/repos/sql-tech/database', {
+                            headers: {
+                                'Authorization': `token ${pat}`,
+                                'Accept': 'application/vnd.github.v3+json'
+                            }
+                        });
+                        if (!repoResponse.ok) {
+                            throw new Error('PAT 無權限存取 sql-tech/database 儲存庫，請確認您是協作者');
+                        }
+
                         // 驗證成功
-                        githubPAT = pat; // *** 修復：儲存 PAT 供 getOrderNumber 使用 ***
+                        githubPAT = pat;
                         quoteSection.classList.remove('hidden');
                         countdownTimer.classList.remove('hidden');
                         patError.classList.remove('show');
@@ -804,7 +970,7 @@
             });
 
             // 綁定輸入與下拉選單事件
-            [clientName, clientContact, clientEmail, clientNotes, additionalNotes, frontendLevel, backendLevel, seoLevel, hostingLevel, maintenanceLevel, discountSelect, frontendNotes, backendNotes, seoNotes, hostingNotes, maintenanceNotes, discountNotes].forEach(input => {
+            [clientName, clientContact, clientEmail, clientNotes, additionalNotes, useTax, salesRole, salesName, salesContact, salesEmail, frontendLevel, backendLevel, seoLevel, hostingLevel, maintenanceLevel, discountSelect, frontendNotes, backendNotes, seoNotes, hostingNotes, maintenanceNotes, discountNotes].forEach(input => {
                 input.addEventListener('input', updateQuotePreview);
             });
 
@@ -816,6 +982,18 @@
                     alert('報價單資料已儲存並帶入報價單！');
                 } finally {
                     confirmNotesBtn.disabled = false;
+                }
+            });
+
+            // 清除報價單內容按鈕
+            clearQuoteBtn.addEventListener('click', async () => {
+                clearQuoteBtn.disabled = true;
+                try {
+                    resetForm();
+                    await updateQuotePreview();
+                    alert('報價單內容已清除！');
+                } finally {
+                    clearQuoteBtn.disabled = false;
                 }
             });
 
@@ -842,22 +1020,26 @@
                 }
             }
 
-            // 產生報價單（優化 PDF 生成）
+            // 產生報價單
             generateQuoteBtn.addEventListener('click', async () => {
                 generateQuoteBtn.disabled = true;
                 try {
-                    const orderNumber = orderNumberEl.textContent.replace('報價單編號：', '');
-                    if (orderNumber === '載入中...') {
-                        throw new Error('訂單編號未正確載入，請重試！');
+                    // 獲取新訂單編號
+                    const orderNumber = await getOrderNumber();
+                    if (!orderNumber) {
+                        throw new Error('無法獲取訂單編號，請重試！');
                     }
+                    orderNumberEl.textContent = `報價單編號：${orderNumber}`;
+                    localStorage.setItem('lastOrderNumber', orderNumber);
+
                     const pdfFilename = `報價單_${orderNumber}.pdf`;
 
                     // 從 localStorage 或後端讀取報價單資料
                     const quoteData = await fetchQuoteData();
 
-                    // *** 修復：確保報價預覽渲染完成 ***
+                    // 確保報價預覽渲染完成
                     await updateQuotePreview();
-                    await new Promise(resolve => setTimeout(resolve, 500)); // 等待渲染
+                    await new Promise(resolve => setTimeout(resolve, 500));
 
                     // 生成並下載 PDF
                     const element = document.getElementById('quote-preview');
@@ -892,5 +1074,5 @@
             });
         });
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9336846abe49bfef',t:'MTc0NTE3MTc3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
