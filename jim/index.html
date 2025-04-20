@@ -884,9 +884,8 @@
 
                 // 計算折扣與稅金（四捨五入）
                 let discount = 0;
-                const hasAllServices = selectedServices.slice(0, 5).every(s => s.level !== 'none');
                 const discountLevel = selectedServices.find(s => s.name === '折扣')?.level || 'none';
-                if (discountLevel !== 'none' && hasAllServices) {
+                if (discountLevel !== 'none' && subtotal > 0) {
                     discount = Math.round(subtotal * discountRates[discountLevel]);
                 }
                 const tax = useTax.value === 'use-tax' ? Math.round((subtotal - discount) * 0.05) : 0;
@@ -1076,7 +1075,7 @@
 
                     // 確保報價預覽渲染完成
                     await updateQuotePreview();
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                    await new Promise(resolve => setTimeout(resolve, 500));
 
                     // 檢查報價單圖片載入
                     console.log('檢查報價單圖片載入');
@@ -1089,7 +1088,7 @@
                             } else {
                                 img.onload = resolve;
                                 img.onerror = () => reject(new Error('報價單圖片載入失敗: ' + img.src));
-                                setTimeout(() => reject(new Error('圖片載入超時')), 1000);
+                                setTimeout(() => reject(new Error('圖片載入超時')), 5000);
                             }
                         }).catch(error => {
                             console.warn('圖片載入失敗，將繼續生成 PDF:', error.message);
