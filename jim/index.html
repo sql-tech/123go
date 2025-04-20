@@ -37,45 +37,6 @@
         }
         return gk_fileData[filename] || "";
         }
-        </script><script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
         </script><!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -141,14 +102,14 @@
             color: #4A4A4A;
             margin-bottom: 8px;
         }
-        input[type="password"], input[type="text"], input[type="email"], textarea, select {
+        input[type="password"], input[type="text"], input[type="email"], input[type="number"], textarea, select {
             width: 100%;
             padding: 10px;
             border: 1px solid #D1D5DB;
             border-radius: 6px;
             transition: border-color 0.2s ease;
         }
-        input[type="password"]:focus, input[type="text"]:focus, input[type="email"]:focus, textarea:focus, select:focus {
+        input[type="password"]:focus, input[type="text"]:focus, input[type="email"]:focus, input[type="number"]:focus, textarea:focus, select:focus {
             border-color: #2563EB;
             outline: none;
         }
@@ -222,12 +183,39 @@
             max-width: 150px;
             margin-bottom: 10px;
         }
+        #quote-preview .signature-field {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+        }
+        #quote-preview .signature-box {
+            width: 80mm; /* 從 120mm 減少到 80mm */
+            height: 20mm;
+            border: 1px solid #000;
+            display: flex;
+            align-items: center;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        #quote-preview .signature-label {
+            font-size: 14px;
+            color: #1F2937;
+            margin-right: 10px;
+        }
+        #quote-preview .signature-line {
+            flex-grow: 1;
+            border: none;
+            border-top: 1px solid #000;
+            margin: 0 5px;
+        }
         @media (max-width: 768px) {
             .container {
                 margin: 20px;
             }
             .header h1 {
-                font-size: 1.8rem;
+                font-size: 1.5rem; /* 從 1.8rem 減少到 1.5rem */
+                white-space: nowrap; /* 防止斷行 */
             }
             .card {
                 padding: 15px;
@@ -237,6 +225,13 @@
             }
             .btn {
                 width: 100%;
+            }
+            #quote-preview .signature-box {
+                width: 60%; /* 從 90% 減少到 60% */
+                height: 15mm;
+            }
+            #quote-preview .signature-label {
+                font-size: 12px;
             }
         }
     </style>
@@ -366,6 +361,44 @@
                         <input type="text" id="maintenanceNotes" placeholder="輸入自訂功能（例如：定期更新、技術支援）">
                     </div>
                 </div>
+                <!-- 特殊功能 -->
+                <div class="card">
+                    <h2>特殊功能</h2>
+                    <div class="input-group">
+                        <label for="specialFeatureLevel">選擇服務層級</label>
+                        <select id="specialFeatureLevel">
+                            <option value="none">不選擇</option>
+                            <option value="basic">基礎</option>
+                            <option value="advanced">進階</option>
+                            <option value="premium">高階</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="specialFeaturePrice">價格 (NTD)</label>
+                        <input type="number" id="specialFeaturePrice" placeholder="輸入價格" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="specialFeatureNotes">自訂功能描述</label>
+                        <input type="text" id="specialFeatureNotes" placeholder="輸入自訂功能（例如：AI模組、第三方整合）">
+                    </div>
+                </div>
+                <!-- 初次設定 -->
+                <div class="card">
+                    <h2>初次設定</h2>
+                    <div class="input-group">
+                        <label for="initialSetupLevel">選擇服務層級</label>
+                        <select id="initialSetupLevel">
+                            <option value="none">不選擇</option>
+                            <option value="basic">基礎 ($1,500)</option>
+                            <option value="advanced">進階 ($2,000)</option>
+                            <option value="premium">高階 ($3,500)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="initialSetupNotes">自訂功能描述</label>
+                        <input type="text" id="initialSetupNotes" placeholder="輸入自訂功能（例如：環境設置、初始資料導入）">
+                    </div>
+                </div>
                 <!-- 折扣 -->
                 <div class="card">
                     <h2>折扣</h2>
@@ -479,6 +512,13 @@
                         <p><strong>報價人員姓名：</strong> <span id="preview-salesName">未輸入</span></p>
                         <p><strong>報價人員電話/Line：</strong> <span id="preview-salesContact">未輸入</span></p>
                         <p><strong>報價人員 E-mail：</strong> <span id="preview-salesEmail">未輸入</span></p>
+                    </div>
+                    <!-- 客戶簽名欄位 -->
+                    <div class="signature-field">
+                        <div class="signature-box">
+                            <span class="signature-label">客戶簽名</span>
+                            <hr class="signature-line">
+                        </div>
                     </div>
                 </div>
                 <!-- 產生報價單按鈕 -->
@@ -599,12 +639,17 @@
             const seoLevel = document.getElementById('seoLevel');
             const hostingLevel = document.getElementById('hostingLevel');
             const maintenanceLevel = document.getElementById('maintenanceLevel');
+            const initialSetupLevel = document.getElementById('initialSetupLevel');
+            const specialFeatureLevel = document.getElementById('specialFeatureLevel');
+            const specialFeaturePrice = document.getElementById('specialFeaturePrice');
             const discountSelect = document.getElementById('discount');
             const frontendNotes = document.getElementById('frontendNotes');
             const backendNotes = document.getElementById('backendNotes');
             const seoNotes = document.getElementById('seoNotes');
             const hostingNotes = document.getElementById('hostingNotes');
             const maintenanceNotes = document.getElementById('maintenanceNotes');
+            const initialSetupNotes = document.getElementById('initialSetupNotes');
+            const specialFeatureNotes = document.getElementById('specialFeatureNotes');
             const discountNotes = document.getElementById('discountNotes');
             const quoteTableBody = document.getElementById('quote-table-body');
             const subtotalEl = document.getElementById('subtotal');
@@ -644,7 +689,8 @@
                 backend: { basic: 13000, advanced: 23000, premium: 33000 },
                 seo: { basic: 5000, advanced: 10000, premium: 20000 },
                 hosting: { basic: 2000, advanced: 3000, premium: 5000 },
-                maintenance: { basic: 2200, advanced: 3500, premium: 5200 }
+                maintenance: { basic: 2200, advanced: 3500, premium: 5200 },
+                initialSetup: { basic: 1500, advanced: 2000, premium: 3500 }
             };
 
             // 折扣百分比表
@@ -699,6 +745,8 @@
                             { name: 'SEO', level: seoLevel.value, price: prices.seo[seoLevel.value] || 0, notes: sanitizeInput(seoNotes.value) },
                             { name: '主機代管', level: hostingLevel.value, price: prices.hosting[hostingLevel.value] || 0, notes: sanitizeInput(hostingNotes.value) },
                             { name: '後續維護', level: maintenanceLevel.value, price: prices.maintenance[maintenanceLevel.value] || 0, notes: sanitizeInput(maintenanceNotes.value) },
+                            { name: '特殊功能', level: specialFeatureLevel.value, price: parseFloat(specialFeaturePrice.value) || 0, notes: sanitizeInput(specialFeatureNotes.value) },
+                            { name: '初次設定', level: initialSetupLevel.value, price: prices.initialSetup[initialSetupLevel.value] || 0, notes: sanitizeInput(initialSetupNotes.value) },
                             { name: '折扣', level: discountSelect.value, price: 0, notes: sanitizeInput(discountNotes.value) }
                         ]
                     };
@@ -747,6 +795,8 @@
                         { name: 'SEO', level: 'none', price: 0, notes: '' },
                         { name: '主機代管', level: 'none', price: 0, notes: '' },
                         { name: '後續維護', level: 'none', price: 0, notes: '' },
+                        { name: '特殊功能', level: 'none', price: 0, notes: '' },
+                        { name: '初次設定', level: 'none', price: 0, notes: '' },
                         { name: '折扣', level: 'none', price: 0, notes: '' }
                     ]
                 };
@@ -817,12 +867,17 @@
                 seoLevel.value = 'none';
                 hostingLevel.value = 'none';
                 maintenanceLevel.value = 'none';
+                initialSetupLevel.value = 'none';
+                specialFeatureLevel.value = 'none';
+                specialFeaturePrice.value = '';
                 discountSelect.value = 'none';
                 frontendNotes.value = '';
                 backendNotes.value = '';
                 seoNotes.value = '';
                 hostingNotes.value = '';
                 maintenanceNotes.value = '';
+                initialSetupNotes.value = '';
+                specialFeatureNotes.value = '';
                 discountNotes.value = '';
                 // 清除 localStorage 中的報價資料
                 localStorage.removeItem('quoteData');
@@ -867,6 +922,13 @@
                 quoteTableBody.innerHTML = '';
                 let subtotal = 0;
                 selectedServices.forEach(service => {
+                    // 特殊處理特殊功能：需檢查價格是否有效
+                    if (service.name === '特殊功能' && service.level !== 'none') {
+                        const price = parseFloat(service.price) || 0;
+                        if (price <= 0) {
+                            return; // 價格無效，不顯示
+                        }
+                    }
                     if (service.level !== 'none') {
                         if (service.name !== '折扣') {
                             subtotal += service.price;
@@ -996,7 +1058,7 @@
             });
 
             // 綁定輸入與下拉選單事件
-            [clientName, clientContact, clientEmail, clientNotes, additionalNotes, useTax, salesRole, salesName, salesContact, salesEmail, frontendLevel, backendLevel, seoLevel, hostingLevel, maintenanceLevel, discountSelect, frontendNotes, backendNotes, seoNotes, hostingNotes, maintenanceNotes, discountNotes].forEach(input => {
+            [clientName, clientContact, clientEmail, clientNotes, additionalNotes, useTax, salesRole, salesName, salesContact, salesEmail, frontendLevel, backendLevel, seoLevel, hostingLevel, maintenanceLevel, initialSetupLevel, specialFeatureLevel, specialFeaturePrice, discountSelect, frontendNotes, backendNotes, seoNotes, hostingNotes, maintenanceNotes, initialSetupNotes, specialFeatureNotes, discountNotes].forEach(input => {
                 input.addEventListener('input', () => {
                     console.log(`輸入變更: ${input.id} = ${input.value}`);
                     updateQuotePreview();
@@ -1204,6 +1266,7 @@
             });
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9336e73aed49bd41',t:'MTc0NTE3NTgyMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9336e73aed49bd41',t:'MTc0NTE3NTgyMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9337c0e95c19add2',t:'MTc0NTE4NDczOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
