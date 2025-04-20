@@ -1442,12 +1442,13 @@
                         throw new Error('無法找到報價單預覽元素');
                     }
 
+                    // 克隆元素以避免影響原始排版
                     const clone = originalElement.cloneNode(true);
                     document.body.appendChild(clone);
                     clone.style.position = 'absolute';
                     clone.style.left = '0';
                     clone.style.top = '0';
-                    clone.style.width = '190mm';
+                    clone.style.width = '190mm'; // A4 寬度減去邊距 (210mm - 10mm x 2)
                     clone.style.height = 'auto';
                     clone.style.backgroundColor = '#fff';
                     clone.style.padding = '10mm';
@@ -1468,35 +1469,55 @@
                         }
                     });
 
-                    console.log('開始截圖報價單，目標元素:', clone);
+                    console.log('開始生成 PDF，目標元素:', clone);
                     try {
-                        const canvas = await html2canvas(clone, {
-                            scale: 1,
-                            useCORS: true,
-                            backgroundColor: '#fff',
-                            logging: true,
-                            width: 794
-                        });
-                        const imgData = canvas.toDataURL('image/png', 0.8);
-                        console.log('截圖成功，圖片大小:', imgData.length, '像素高度:', canvas.height);
-
                         const { jsPDF } = window.jspdf;
                         const pdf = new jsPDF({
                             unit: 'mm',
                             format: 'a4',
                             orientation: 'portrait'
                         });
-                        const imgWidth = 190;
-                        const pageHeight = 277 - 20;
-                        const imgHeight = canvas.height * imgWidth / canvas.width;
-                        const totalPages = Math.ceil(imgHeight / pageHeight);
 
-                        console.log(`總頁數: ${totalPages}, 圖片高度: ${imgHeight}mm`);
+                        const imgWidth = 190; // A4 寬度減去邊距 (210mm - 10mm x 2)
+                        const pageHeightMM = 277 - 20; // A4 高度減去邊距 (297mm - 10mm x 2)
+                        const scale = 794 / (imgWidth * 3.78); // 像素與 mm 的比例 (794px 對應 190mm)
 
+                        // 第一次截圖以獲取總高度
+                        const fullCanvas = await html2canvas(clone, {
+                            scale: 1,
+                            useCORS: true,
+                            backgroundColor: '#fff',
+                            logging: true,
+                            width: 794
+                        });
+                        const totalHeightPx = fullCanvas.height;
+                        const pageHeightPx = pageHeightMM * 3.78; // 轉換 mm 到像素
+                        const totalPages = Math.ceil(totalHeightPx / pageHeightPx);
+
+                        console.log(`總頁數: ${totalPages}, 總高度: ${totalHeightPx}px, 每頁高度: ${pageHeightPx}px`);
+
+                        // 分段截圖並添加到 PDF
                         for (let page = 0; page < totalPages; page++) {
                             if (page > 0) pdf.addPage();
-                            const position = -(page * pageHeight);
-                            pdf.addImage(imgData, 'PNG', 10, 10 + position, imgWidth, imgHeight, undefined, 'FAST');
+
+                            // 計算當前頁的截圖區域
+                            const yOffsetPx = page * pageHeightPx;
+                            const canvas = await html2canvas(clone, {
+                                scale: 1,
+                                useCORS: true,
+                                backgroundColor: '#fff',
+                                logging: true,
+                                width: 794,
+                                y: yOffsetPx,
+                                height: Math.min(pageHeightPx, totalHeightPx - yOffsetPx),
+                                windowHeight: totalHeightPx // 確保窗口高度足夠
+                            });
+
+                            const imgData = canvas.toDataURL('image/png', 0.8);
+                            const imgHeightMM = (canvas.height / 3.78); // 轉換像素到 mm
+
+                            // 添加圖片到 PDF
+                            pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeightMM, undefined, 'FAST');
                         }
 
                         const pdfBlob = pdf.output('blob');
@@ -1547,6 +1568,4 @@
         });
     </script>
     <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9336e73aed49bd41',t:'MTc0NTE3NTgyMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9337c0e95c19add2',t:'MTc0NTE4NDczOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93383ce648b9b041',t:'MTc0NTE4OTgxNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
-</html>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9337c0e95c19add2',t:'MTc0NTE4NDczOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){
