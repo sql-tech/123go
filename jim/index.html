@@ -50,23 +50,15 @@
                 var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
                 var firstSheetName = workbook.SheetNames[0];
                 var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
                 var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
                 var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
                 var headerRowIndex = filteredData.findIndex((row, index) =>
                   row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
                 );
-                // Fallback
                 if (headerRowIndex === -1 || headerRowIndex > 25) {
                   headerRowIndex = 0;
                 }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
                 csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
                 return csv;
             } catch (e) {
@@ -387,7 +379,7 @@
                 <div class="card">
                     <h2>後續維護</h2>
                     <div class="input-group">
-                        <label for="maintenanceLevel">選擇服務層級</label>
+                        <label for="maintenanceLevel">選擇層級</label>
                         <select id="maintenanceLevel">
                             <option value="none">不選擇</option>
                             <option value="basic">基礎 ($2,200/月)</option>
@@ -589,10 +581,15 @@
             const today = new Date();
             const year = today.getFullYear();
             const month = String(today.getMonth() + 1).padStart(2, '0');
-            const key = `${year}-${month}`;
+            const key = `${year}-${month}`; // 例如 "2025-04"
             const retries = 3;
 
             try {
+                // 檢查 localStorage 備用計數器
+                const localKey = `orderNumber_${key}`;
+                let localSequence = parseInt(localStorage.getItem(localKey)) || 0;
+
+                // 嘗試使用 GitHub API 更新序號
                 for (let i = 0; i < retries; i++) {
                     try {
                         // 讀取 sql-tech/database 的 Issue #2 評論
@@ -611,8 +608,16 @@
                         console.log('從 GitHub Issue #2 讀取的評論:', comments);
                         const lastComment = comments.length > 0 ? comments[comments.length - 1].body : '';
                         const match = lastComment.match(new RegExp(`${key}: (\\d+)`));
-                        let sequence = match ? parseInt(match[1]) + 1 : 1;
-                        console.log(`計算的序列號: ${sequence}`);
+                        let sequence = match ? parseInt(match[1]) : 0;
+
+                        // 與 localStorage 比較，取較大值
+                        sequence = Math.max(sequence, localSequence);
+                        sequence += 1;
+
+                        // 檢查序號範圍
+                        if (sequence > 99999) {
+                            throw new Error(`序號已達到上限 (99999)，請聯繫管理員處理！`);
+                        }
 
                         // 寫入新評論
                         console.log('寫入新評論至 GitHub Issue #2');
@@ -627,13 +632,14 @@
                         });
                         if (!updateResponse.ok) {
                             const errorData = await updateResponse.json().catch(() => ({}));
-                            throw new Error(`無法寫入評論：${updateResponse.status} ${updateResponse.statusText} ${errorData.message || ''}`);
+                            const errorMsg = errorData.message || updateResponse.statusText;
+                            throw new Error(`無法寫入評論：${updateResponse.status} ${errorMsg}`);
                         }
                         console.log(`成功寫入新評論: ${key}: ${sequence.toString().padStart(5, '0')}`);
 
-                        return `${year}-${month
-
-}-${sequence.toString().padStart(5, '0')}`;
+                        // 更新 localStorage
+                        localStorage.setItem(localKey, sequence.toString());
+                        return `${year}-${month}-${sequence.toString().padStart(5, '0')}`;
                     } catch (error) {
                         if (error.message.includes('409') && i < retries - 1) {
                             console.warn('檢測到並發衝突，重試中...');
@@ -646,8 +652,22 @@
                 throw new Error('重試失敗，請檢查 GitHub API 或 PAT');
             } catch (error) {
                 console.error('獲取訂單編號錯誤:', error);
-                alert(`獲取訂單編號失敗：${error.message}`);
-                return `${year}-${month}-00001`;
+                alert(`獲取訂單編號失敗：${error.message}\n正在使用本地計數器作為備用方案。`);
+
+                // 備用方案：使用 localStorage 計數
+                const localKey = `orderNumber_${key}`;
+                let localSequence = parseInt(localStorage.getItem(localKey)) || 0;
+                localSequence += 1;
+
+                // 檢查序號範圍
+                if (localSequence > 99999) {
+                    alert(`本地序號已達到上限 (99999)，請聯繫管理員處理！`);
+                    return null;
+                }
+
+                localStorage.setItem(localKey, localSequence.toString());
+                console.log(`使用本地計數器: ${key}: ${localSequence.toString().padStart(5, '0')}`);
+                return `${year}-${month}-${localSequence.toString().padStart(5, '0')}`;
             } finally {
                 isFetchingOrderNumber = false;
             }
@@ -912,9 +932,7 @@
                     if (response.ok) {
                         const data = await response.json();
                         console.log('從後端讀取的報價資料:', data);
-                        // 確保返回的資料包含 services 陣列
                         if (data && Array.isArray(data.services)) {
-                            // 確保 useTax 是有效值
                             data.useTax = ['use-tax', 'no-tax'].includes(data.useTax) ? data.useTax : 'no-tax';
                             return data;
                         } else {
@@ -934,9 +952,7 @@
                         }
                         const data = JSON.parse(rawData);
                         console.log('從 localStorage 讀取的報價資料:', data);
-                        // 檢查資料是否包含 services 陣列
                         if (data && Array.isArray(data.services)) {
-                            // 確保 useTax 是有效值
                             data.useTax = ['use-tax', 'no-tax'].includes(data.useTax) ? data.useTax : 'no-tax';
                             return data;
                         } else {
@@ -981,7 +997,6 @@
                 initialSetupNotes.value = '';
                 specialFeatureNotes.value = '';
                 discountNotes.value = '';
-                // 清除 localStorage 中的報價資料
                 localStorage.removeItem('quoteData');
                 localStorage.removeItem('lastOrderNumber');
                 updateQuotePreview();
@@ -993,42 +1008,35 @@
                 const expiry = new Date(today);
                 expiry.setDate(today.getDate() + 30);
 
-                // 使用 localStorage 中的上次訂單編號，若無則顯示「載入中...」
                 const lastOrderNumber = localStorage.getItem('lastOrderNumber') || '載入中...';
                 orderNumberEl.textContent = `報價單編號：${lastOrderNumber}`;
                 quoteDateEl.textContent = today.toLocaleDateString('zh-TW');
                 quoteExpiryEl.textContent = expiry.toLocaleDateString('zh-TW');
 
-                // 從後端或 localStorage 讀取報價單資料
                 const quoteData = await fetchQuoteData();
                 console.log('更新報價預覽的 quoteData:', quoteData);
 
-                // 更新客戶資訊
                 previewClientName.textContent = quoteData.clientName || '未輸入';
                 previewClientContact.textContent = quoteData.clientContact || '未輸入';
                 previewClientEmail.textContent = quoteData.clientEmail || '未輸入';
                 previewClientNotes.textContent = quoteData.clientNotes || '未輸入';
                 previewAdditionalNotes.textContent = quoteData.additionalNotes || '未輸入';
 
-                // 更新業務人員資訊
                 previewSalesRole.textContent = roleDisplayNames[quoteData.salesRole] || '未輸入';
                 previewSalesName.textContent = quoteData.salesName || '未輸入';
                 previewSalesContact.textContent = quoteData.salesContact || '未輸入';
                 previewSalesEmail.textContent = quoteData.salesEmail || '未輸入';
 
-                // 更新服務項目，確保 services 是陣列
                 const selectedServices = Array.isArray(quoteData.services) ? quoteData.services : [];
                 console.log('selectedServices:', selectedServices);
 
-                // 更新表格
                 quoteTableBody.innerHTML = '';
                 let subtotal = 0;
                 selectedServices.forEach(service => {
-                    // 特殊處理特殊功能：需檢查價格是否有效
                     if (service.name === '特殊功能' && service.level !== 'none') {
                         const price = parseFloat(service.price) || 0;
                         if (price <= 0) {
-                            return; // 價格無效，不顯示
+                            return;
                         }
                     }
                     if (service.level !== 'none') {
@@ -1046,7 +1054,6 @@
                     }
                 });
 
-                // 計算折扣與稅金（四捨五入）
                 let discount = 0;
                 const discountLevel = selectedServices.find(s => s.name === '折扣')?.level || 'none';
                 if (discountLevel !== 'none' && subtotal > 0) {
@@ -1055,14 +1062,12 @@
                 const tax = useTax.value === 'use-tax' ? Math.round((subtotal - discount) * 0.05) : 0;
                 const total = Math.round(subtotal - discount + tax);
 
-                // 更新顯示
                 subtotalEl.textContent = subtotal.toLocaleString();
                 discountAmountEl.textContent = discount.toLocaleString();
                 taxEl.textContent = tax.toLocaleString();
                 taxRow.style.display = useTax.value === 'use-tax' ? '' : 'none';
                 totalEl.textContent = total.toLocaleString();
 
-                // 更新付款條款金額（四捨五入）
                 depositEl.textContent = `NT$ ${Math.round(total * 0.3).toLocaleString()}`;
                 draftEl.textContent = `NT$ ${Math.round(total * 0.5).toLocaleString()}`;
                 launchEl.textContent = `NT$ ${Math.round(total * 0.2).toLocaleString()}`;
@@ -1072,11 +1077,9 @@
             authBtn.addEventListener('click', async () => {
                 console.log('驗證按鈕點擊開始');
                 if (patInput.disabled) {
-                    // 已驗證，執行登出
                     console.log('執行登出，重新載入頁面');
                     location.reload();
                 } else {
-                    // 未驗證，執行 PAT 驗證
                     try {
                         authBtn.disabled = true;
                         const pat = patInput.value.trim();
@@ -1089,7 +1092,6 @@
                             return;
                         }
 
-                        // 驗證 PAT
                         console.log('發送請求至 GitHub API: /user');
                         const userResponse = await fetch('https://api.github.com/user', {
                             headers: {
@@ -1104,7 +1106,6 @@
                             throw new Error(`PAT 驗證失敗：${errorMsg}`);
                         }
 
-                        // 檢查 sql-tech/database 存取權限
                         console.log('發送請求至 GitHub API: /repos/sql-tech/database');
                         const repoResponse = await fetch('https://api.github.com/repos/sql-tech/database', {
                             headers: {
@@ -1117,7 +1118,6 @@
                             throw new Error('PAT 無權限存取 sql-tech/database 儲存庫，請確認您是協作者');
                         }
 
-                        // 驗證成功
                         githubPAT = pat;
                         quoteSection.classList.remove('hidden');
                         countdownTimer.classList.remove('hidden');
@@ -1128,7 +1128,6 @@
                         authBtn.textContent = '登出';
                         console.log('驗證成功，顯示報價系統');
 
-                        // 啟動倒數計時器
                         const startTime = Date.now();
                         const countdownInterval = setInterval(() => {
                             const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -1143,7 +1142,6 @@
                             }
                         }, 1000);
 
-                        // 初始化報價預覽
                         console.log('初始化報價預覽');
                         await updateQuotePreview();
                         alert('驗證成功，正在載入報價系統...');
@@ -1197,7 +1195,6 @@
                 console.log('產生報價單按鈕點擊');
                 generateQuoteBtn.disabled = true;
                 try {
-                    // 獲取新訂單編號
                     const orderNumber = await getOrderNumber();
                     if (!orderNumber) {
                         throw new Error('無法獲取訂單編號，請重試！');
@@ -1205,19 +1202,15 @@
                     orderNumberEl.textContent = `報價單編號：${orderNumber}`;
                     localStorage.setItem('lastOrderNumber', orderNumber);
 
-                    // 獲取客戶名稱並清理
                     const rawClientName = clientName.value.trim();
                     const clientNameSanitized = rawClientName ? sanitizeInput(rawClientName).replace(/[^a-zA-Z0-9_-]/g, '') : '';
                     const pdfFilename = `報價單_${orderNumber}${clientNameSanitized ? '_' + clientNameSanitized : ''}.pdf`;
 
-                    // 從 localStorage 或後端讀取報價單資料
                     const quoteData = await fetchQuoteData();
 
-                    // 確保報價預覽渲染完成
                     await updateQuotePreview();
                     await new Promise(resolve => setTimeout(resolve, 500));
 
-                    // 檢查報價單圖片載入
                     console.log('檢查報價單圖片載入');
                     const img = document.querySelector('#quote-preview img');
                     if (img) {
@@ -1237,27 +1230,24 @@
                         console.warn('未找到報價單圖片，將繼續生成 PDF');
                     }
 
-                    // 確保元素存在
                     const originalElement = document.getElementById('quote-preview');
                     if (!originalElement) {
                         throw new Error('無法找到報價單預覽元素');
                     }
 
-                    // 克隆元素以避免影響原始排版
                     const clone = originalElement.cloneNode(true);
                     document.body.appendChild(clone);
                     clone.style.position = 'absolute';
                     clone.style.left = '0';
                     clone.style.top = '0';
-                    clone.style.width = '190mm'; // A4 寬度減去邊距 (210mm - 10mm x 2)
-                    clone.style.height = 'auto'; // 允許高度根據內容自動調整
+                    clone.style.width = '190mm';
+                    clone.style.height = 'auto';
                     clone.style.backgroundColor = '#fff';
                     clone.style.padding = '10mm';
                     clone.style.boxShadow = 'none';
                     clone.style.borderRadius = '0';
                     clone.style.overflow = 'visible';
-                    clone.style.transition = 'none'; // 移除動畫
-                    // 簡化表格樣式
+                    clone.style.transition = 'none';
                     clone.querySelectorAll('*').forEach(el => {
                         el.style.boxShadow = 'none';
                         el.style.borderRadius = '0';
@@ -1273,46 +1263,40 @@
 
                     console.log('開始截圖報價單，目標元素:', clone);
                     try {
-                        // 使用 html2canvas 截圖，移除固定高度限制
                         const canvas = await html2canvas(clone, {
                             scale: 1,
                             useCORS: true,
                             backgroundColor: '#fff',
                             logging: true,
-                            width: 794 // A4 像素寬度 (96dpi)
+                            width: 794
                         });
-                        const imgData = canvas.toDataURL('image/png', 0.8); // 壓縮品質
+                        const imgData = canvas.toDataURL('image/png', 0.8);
                         console.log('截圖成功，圖片大小:', imgData.length, '像素高度:', canvas.height);
 
-                        // 使用 jsPDF 生成 PDF
                         const { jsPDF } = window.jspdf;
                         const pdf = new jsPDF({
                             unit: 'mm',
                             format: 'a4',
                             orientation: 'portrait'
                         });
-                        const imgWidth = 190; // 考慮 10mm 邊距
-                        const pageHeight = 277 - 20; // A4 高度減邊距 (297mm - 10mm x 2)，再減去上下邊距重疊
+                        const imgWidth = 190;
+                        const pageHeight = 277 - 20;
                         const imgHeight = canvas.height * imgWidth / canvas.width;
                         const totalPages = Math.ceil(imgHeight / pageHeight);
 
                         console.log(`總頁數: ${totalPages}, 圖片高度: ${imgHeight}mm`);
 
-                        // 分頁渲染，修正偏移計算
                         for (let page = 0; page < totalPages; page++) {
                             if (page > 0) pdf.addPage();
-                            const position = -(page * (pageHeight + 10)); // 考慮邊距，避免重疊
+                            const position = -(page * pageHeight);
                             pdf.addImage(imgData, 'PNG', 10, 10 + position, imgWidth, imgHeight, undefined, 'FAST');
                         }
 
-                        // 輸出 PDF
                         const pdfBlob = pdf.output('blob');
                         console.log('PDF 生成成功，大小:', pdfBlob.size);
 
-                        // 移除克隆元素
                         document.body.removeChild(clone);
 
-                        // 下載 PDF
                         const pdfUrl = window.URL.createObjectURL(pdfBlob);
                         const pdfLink = document.createElement('a');
                         pdfLink.href = pdfUrl;
@@ -1320,7 +1304,6 @@
                         pdfLink.click();
                         window.URL.revokeObjectURL(pdfUrl);
 
-                        // 將 PDF 轉為 Base64 並上傳至 GitHub
                         const reader = new FileReader();
                         const base64Content = await new Promise(resolve => {
                             reader.onload = () => resolve(reader.result.split(',')[1]);
@@ -1336,7 +1319,6 @@
                             alert(`報價單編號 ${orderNumber} 已完成，但上傳至 GitHub 失敗，請檢查 PAT 或網路！`);
                         }
 
-                        // 重置畫面
                         resetForm();
                         await updateQuotePreview();
                     } catch (error) {
