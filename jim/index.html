@@ -85,7 +85,8 @@
     <title>123go形象網站設計報價系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sanitize-html/2.13.0/sanitize-html.min.js"></script>
     <style>
         body {
@@ -271,7 +272,7 @@
                         <label for="clientContact">客戶電話/Line</label>
                         <input type="text" id="clientContact" placeholder="輸入電話或Line ID">
                     </div>
-                    <div class="input-groupDatacontrols
+                    <div class="input-group">
                         <label for="clientEmail">客戶 E-mail</label>
                         <input type="email" id="clientEmail" placeholder="輸入E-mail">
                     </div>
@@ -491,9 +492,7 @@
     <script>
         // 儲存 PAT 的全域變數
         let githubPAT = '';
-
-        // 防抖控制
-        let isFetchingOrderNumber = false;
+        let isFetchingOrderNumber = false; // 防抖控制
 
         // 獲取訂單編號，使用 sql-tech/database 的 Issue #2
         async function getOrderNumber() {
@@ -1067,40 +1066,136 @@
                     orderNumberEl.textContent = `報價單編號：${orderNumber}`;
                     localStorage.setItem('lastOrderNumber', orderNumber);
 
-                    const pdfFilename = `報價單_${orderNumber}.pdf`;
+                    // 獲取客戶名稱並清理
+                    const rawClientName = clientName.value.trim();
+                    const clientNameSanitized = rawClientName ? sanitizeInput(rawClientName).replace(/[^a-zA-Z0-9_-]/g, '') : '';
+                    const pdfFilename = `報價單_${orderNumber}${clientNameSanitized ? '_' + clientNameSanitized : ''}.pdf`;
 
                     // 從 localStorage 或後端讀取報價單資料
                     const quoteData = await fetchQuoteData();
 
                     // 確保報價預覽渲染完成
                     await updateQuotePreview();
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await new Promise(resolve => setTimeout(resolve, 100));
 
-                    // 生成並下載 PDF
-                    console.log('生成 PDF:', pdfFilename);
-                    const element = document.getElementById('quote-preview');
-                    const pdfBlob = await html2pdf().from(element).set({
-                        margin: 1,
-                        filename: pdfFilename,
-                        html2canvas: { scale: 2, useCORS: true },
-                        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-                    }).toPdf().get('pdf').then(pdf => pdf.output('blob'));
-                    const pdfUrl = window.URL.createObjectURL(pdfBlob);
-                    const pdfLink = document.createElement('a');
-                    pdfLink.href = pdfUrl;
-                    pdfLink.download = pdfFilename;
-                    pdfLink.click();
-                    window.URL.revokeObjectURL(pdfUrl);
+                    // 檢查報價單圖片載入
+                    console.log('檢查報價單圖片載入');
+                    const img = document.querySelector('#quote-preview img');
+                    if (img) {
+                        console.log('等待圖片載入:', img.src);
+                        await new Promise((resolve, reject) => {
+                            if (img.complete && img.naturalWidth !== 0) {
+                                resolve();
+                            } else {
+                                img.onload = resolve;
+                                img.onerror = () => reject(new Error('報價單圖片載入失敗: ' + img.src));
+                                setTimeout(() => reject(new Error('圖片載入超時')), 1000);
+                            }
+                        }).catch(error => {
+                            console.warn('圖片載入失敗，將繼續生成 PDF:', error.message);
+                        });
+                    } else {
+                        console.warn('未找到報價單圖片，將繼續生成 PDF');
+                    }
 
-                    // 上傳 PDF 至後端
-                    await uploadFileToServer(pdfBlob, pdfFilename, 'pdf');
+                    // 確保元素存在
+                    const originalElement = document.getElementById('quote-preview');
+                    if (!originalElement) {
+                        throw new Error('無法找到報價單預覽元素');
+                    }
 
-                    // 顯示提示框
-                    alert(`報價單編號 ${orderNumber} 已完成！`);
+                    // 克隆元素以避免影響原始排版
+                    const clone = originalElement.cloneNode(true);
+                    document.body.appendChild(clone);
+                    clone.style.position = 'absolute';
+                    clone.style.left = '0';
+                    clone.style.top = '0';
+                    clone.style.width = '190mm'; // A4 寬度減去邊距 (210mm - 10mm x 2)
+                    clone.style.backgroundColor = '#fff';
+                    clone.style.padding = '10mm';
+                    clone.style.boxShadow = 'none';
+                    clone.style.borderRadius = '0';
+                    clone.style.overflow = 'visible';
+                    clone.style.transition = 'none'; // 移除動畫
+                    // 簡化表格樣式
+                    clone.querySelectorAll('*').forEach(el => {
+                        el.style.boxShadow = 'none';
+                        el.style.borderRadius = '0';
+                        el.style.transition = 'none';
+                        if (el.tagName === 'TABLE') {
+                            el.style.borderCollapse = 'collapse';
+                            el.querySelectorAll('th, td').forEach(cell => {
+                                cell.style.border = '1px solid #000';
+                                cell.style.padding = '4px';
+                            });
+                        }
+                    });
 
-                    // 重置畫面
-                    resetForm();
-                    await updateQuotePreview();
+                    console.log('開始截圖報價單，目標元素:', clone);
+                    try {
+                        // 使用 html2canvas 截圖
+                        const canvas = await html2canvas(clone, {
+                            scale: 1,
+                            useCORS: true,
+                            backgroundColor: '#fff',
+                            logging: true,
+                            width: 794, // A4 像素寬度 (96dpi)
+                            height: 1123 // A4 像素高度
+                        });
+                        const imgData = canvas.toDataURL('image/png', 0.8); // 壓縮品質
+                        console.log('截圖成功，圖片大小:', imgData.length);
+
+                        // 使用 jsPDF 生成 PDF
+                        const { jsPDF } = window.jspdf;
+                        const pdf = new jsPDF({
+                            unit: 'mm',
+                            format: 'a4',
+                            orientation: 'portrait'
+                        });
+                        const imgWidth = 190; // 考慮 10mm 邊距
+                        const pageHeight = 277; // A4 高度減邊距 (297mm - 10mm x 2)
+                        const imgHeight = canvas.height * imgWidth / canvas.width;
+                        const totalPages = Math.ceil(imgHeight / pageHeight);
+
+                        // 快速分頁
+                        for (let page = 0; page < totalPages; page++) {
+                            if (page > 0) pdf.addPage();
+                            const position = -page * pageHeight;
+                            pdf.addImage(imgData, 'PNG', 10, 10 + position, imgWidth, imgHeight, undefined, 'FAST');
+                        }
+
+                        // 輸出 PDF
+                        const pdfBlob = pdf.output('blob');
+                        console.log('PDF 生成成功，大小:', pdfBlob.size);
+
+                        // 移除克隆元素
+                        document.body.removeChild(clone);
+
+                        // 下載 PDF
+                        const pdfUrl = window.URL.createObjectURL(pdfBlob);
+                        const pdfLink = document.createElement('a');
+                        pdfLink.href = pdfUrl;
+                        pdfLink.download = pdfFilename;
+                        pdfLink.click();
+                        window.URL.revokeObjectURL(pdfUrl);
+
+                        // 上傳 PDF 至後端
+                        await uploadFileToServer(pdfBlob, pdfFilename, 'pdf');
+
+                        // 顯示提示框
+                        alert(`報價單編號 ${orderNumber} 已完成！`);
+
+                        // 重置畫面
+                        resetForm();
+                        await updateQuotePreview();
+                    } catch (error) {
+                        console.error('PDF 生成錯誤:', error);
+                        throw new Error(`PDF 生成失敗：${error.message}`);
+                    } finally {
+                        if (document.body.contains(clone)) {
+                            document.body.removeChild(clone);
+                        }
+                    }
                 } catch (error) {
                     console.error('產生報價單錯誤:', error);
                     alert(`產生報價單失敗：${error.message}`);
@@ -1110,5 +1205,6 @@
             });
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9336846abe49bfef',t:'MTc0NTE3MTc3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9336e73aed49bd41',t:'MTc0NTE3NTgyMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
 </html>
