@@ -271,7 +271,7 @@
                         <label for="clientContact">客戶電話/Line</label>
                         <input type="text" id="clientContact" placeholder="輸入電話或Line ID">
                     </div>
-                    <div class="input-group">
+                    <div class="input-groupDatacontrols
                         <label for="clientEmail">客戶 E-mail</label>
                         <input type="email" id="clientEmail" placeholder="輸入E-mail">
                     </div>
@@ -395,7 +395,7 @@
                     <div class="input-group">
                         <label for="useTax">是否使用營業稅</label>
                         <select id="useTax">
-                            <option value="use-tax" selected>使用營業稅</option>
+                            <option value="use-tax">使用營業稅</option>
                             <option value="no-tax">不使用營業稅</option>
                         </select>
                     </div>
@@ -491,7 +491,9 @@
     <script>
         // 儲存 PAT 的全域變數
         let githubPAT = '';
-        let isFetchingOrderNumber = false; // 防抖控制
+
+        // 防抖控制
+        let isFetchingOrderNumber = false;
 
         // 獲取訂單編號，使用 sql-tech/database 的 Issue #2
         async function getOrderNumber() {
@@ -516,6 +518,7 @@
                 for (let i = 0; i < retries; i++) {
                     try {
                         // 讀取 sql-tech/database 的 Issue #2 評論
+                        console.log('發送請求至 GitHub API: issues/2/comments');
                         const response = await fetch('https://api.github.com/repos/sql-tech/database/issues/2/comments', {
                             headers: {
                                 'Authorization': `token ${githubPAT}`,
@@ -534,6 +537,7 @@
                         console.log(`計算的序列號: ${sequence}`);
 
                         // 寫入新評論
+                        console.log('寫入新評論至 GitHub Issue #2');
                         const updateResponse = await fetch('https://api.github.com/repos/sql-tech/database/issues/2/comments', {
                             method: 'POST',
                             headers: {
@@ -627,6 +631,14 @@
             const generateQuoteBtn = document.getElementById('generate-quote-btn');
             const clearQuoteBtn = document.getElementById('clear-quote-btn');
 
+            // 檢查元素是否正確獲取
+            console.log('authBtn:', authBtn);
+            if (!authBtn) {
+                console.error('無法找到 authBtn 元素，請檢查 DOM');
+                alert('頁面載入錯誤，請重新載入頁面！');
+                return;
+            }
+
             // 價格表
             const prices = {
                 frontend: { basic: 10000, advanced: 20000, premium: 30000 },
@@ -691,6 +703,7 @@
                             { name: '折扣', level: discountSelect.value, price: 0, notes: sanitizeInput(discountNotes.value) }
                         ]
                     };
+                    console.log('儲存報價資料:', quoteData);
                     try {
                         const response = await fetch('/jim/quote/save-temp', {
                             method: 'POST',
@@ -724,7 +737,7 @@
                     clientEmail: '未輸入',
                     clientNotes: '未輸入',
                     additionalNotes: '未輸入',
-                    useTax: 'use-tax',
+                    useTax: 'no-tax',
                     salesRole: 'salesRep',
                     salesName: '未輸入',
                     salesContact: '未輸入',
@@ -740,6 +753,7 @@
                 };
 
                 try {
+                    console.log('發送請求至後端 API: /jim/quote/read-temp');
                     const response = await fetch('/jim/quote/read-temp', {
                         method: 'GET',
                         headers: { 'Content-Type': 'application/json' }
@@ -749,6 +763,8 @@
                         console.log('從後端讀取的報價資料:', data);
                         // 確保返回的資料包含 services 陣列
                         if (data && Array.isArray(data.services)) {
+                            // 確保 useTax 是有效值
+                            data.useTax = ['use-tax', 'no-tax'].includes(data.useTax) ? data.useTax : 'no-tax';
                             return data;
                         } else {
                             console.warn('後端資料缺少 services，改用預設資料');
@@ -769,6 +785,8 @@
                         console.log('從 localStorage 讀取的報價資料:', data);
                         // 檢查資料是否包含 services 陣列
                         if (data && Array.isArray(data.services)) {
+                            // 確保 useTax 是有效值
+                            data.useTax = ['use-tax', 'no-tax'].includes(data.useTax) ? data.useTax : 'no-tax';
                             return data;
                         } else {
                             console.warn('localStorage 資料無效，清除並返回預設資料');
@@ -790,7 +808,7 @@
                 clientEmail.value = '';
                 clientNotes.value = '';
                 additionalNotes.value = '';
-                useTax.value = 'use-tax';
+                useTax.value = 'no-tax';
                 salesRole.value = 'salesRep';
                 salesName.value = '';
                 salesContact.value = '';
@@ -835,7 +853,6 @@
                 previewClientEmail.textContent = quoteData.clientEmail || '未輸入';
                 previewClientNotes.textContent = quoteData.clientNotes || '未輸入';
                 previewAdditionalNotes.textContent = quoteData.additionalNotes || '未輸入';
-                useTax.value = quoteData.useTax || 'use-tax';
 
                 // 更新業務人員資訊
                 previewSalesRole.textContent = roleDisplayNames[quoteData.salesRole] || '未輸入';
@@ -891,29 +908,34 @@
 
             // 驗證與登出按鈕
             authBtn.addEventListener('click', async () => {
-                console.log('驗證按鈕點擊');
+                console.log('驗證按鈕點擊開始');
                 if (patInput.disabled) {
                     // 已驗證，執行登出
+                    console.log('執行登出，重新載入頁面');
                     location.reload();
                 } else {
                     // 未驗證，執行 PAT 驗證
                     try {
                         authBtn.disabled = true;
                         const pat = patInput.value.trim();
+                        console.log('輸入的 PAT:', pat ? '[有值]' : '[無值]');
                         if (!pat) {
                             patError.textContent = '請輸入有效的 PAT！';
                             patError.classList.add('show');
                             alert('請輸入有效的 PAT！');
+                            console.log('PAT 為空，終止驗證');
                             return;
                         }
 
                         // 驗證 PAT
+                        console.log('發送請求至 GitHub API: /user');
                         const userResponse = await fetch('https://api.github.com/user', {
                             headers: {
                                 'Authorization': `token ${pat}`,
                                 'Accept': 'application/vnd.github.v3+json'
                             }
                         });
+                        console.log('userResponse 狀態:', userResponse.status);
                         if (!userResponse.ok) {
                             const errorData = await userResponse.json().catch(() => ({}));
                             const errorMsg = errorData.message || userResponse.statusText;
@@ -921,12 +943,14 @@
                         }
 
                         // 檢查 sql-tech/database 存取權限
+                        console.log('發送請求至 GitHub API: /repos/sql-tech/database');
                         const repoResponse = await fetch('https://api.github.com/repos/sql-tech/database', {
                             headers: {
                                 'Authorization': `token ${pat}`,
                                 'Accept': 'application/vnd.github.v3+json'
                             }
                         });
+                        console.log('repoResponse 狀態:', repoResponse.status);
                         if (!repoResponse.ok) {
                             throw new Error('PAT 無權限存取 sql-tech/database 儲存庫，請確認您是協作者');
                         }
@@ -940,6 +964,7 @@
                         patInput.readonly = true;
                         patInput.disabled = true;
                         authBtn.textContent = '登出';
+                        console.log('驗證成功，顯示報價系統');
 
                         // 啟動倒數計時器
                         const startTime = Date.now();
@@ -949,6 +974,7 @@
                             if (remaining <= 0) {
                                 clearInterval(countdownInterval);
                                 countdownTimer.textContent = '時間到，正在登出...';
+                                console.log('倒數計時結束，重新載入頁面');
                                 location.reload();
                             } else {
                                 countdownTimer.textContent = `還剩 ${remaining} 秒，登出報價系統`;
@@ -956,6 +982,7 @@
                         }, 1000);
 
                         // 初始化報價預覽
+                        console.log('初始化報價預覽');
                         await updateQuotePreview();
                         alert('驗證成功，正在載入報價系統...');
                     } catch (error) {
@@ -965,17 +992,22 @@
                         alert(error.message);
                     } finally {
                         authBtn.disabled = false;
+                        console.log('驗證按鈕處理完成');
                     }
                 }
             });
 
             // 綁定輸入與下拉選單事件
             [clientName, clientContact, clientEmail, clientNotes, additionalNotes, useTax, salesRole, salesName, salesContact, salesEmail, frontendLevel, backendLevel, seoLevel, hostingLevel, maintenanceLevel, discountSelect, frontendNotes, backendNotes, seoNotes, hostingNotes, maintenanceNotes, discountNotes].forEach(input => {
-                input.addEventListener('input', updateQuotePreview);
+                input.addEventListener('input', () => {
+                    console.log(`輸入變更: ${input.id} = ${input.value}`);
+                    updateQuotePreview();
+                });
             });
 
             // 確定帶入報價單按鈕
             confirmNotesBtn.addEventListener('click', async () => {
+                console.log('確定帶入報價單按鈕點擊');
                 confirmNotesBtn.disabled = true;
                 try {
                     await saveQuoteData();
@@ -987,6 +1019,7 @@
 
             // 清除報價單內容按鈕
             clearQuoteBtn.addEventListener('click', async () => {
+                console.log('清除報價單內容按鈕點擊');
                 clearQuoteBtn.disabled = true;
                 try {
                     resetForm();
@@ -999,6 +1032,7 @@
 
             // 上傳檔案至伺服器
             async function uploadFileToServer(blob, filename, bundled) {
+                console.log(`上傳檔案: ${filename} 至 /jim/quote/${bundled}`);
                 const formData = new FormData();
                 formData.append('file', blob, filename);
                 formData.append('folder', bundled);
@@ -1022,6 +1056,7 @@
 
             // 產生報價單
             generateQuoteBtn.addEventListener('click', async () => {
+                console.log('產生報價單按鈕點擊');
                 generateQuoteBtn.disabled = true;
                 try {
                     // 獲取新訂單編號
@@ -1042,6 +1077,7 @@
                     await new Promise(resolve => setTimeout(resolve, 500));
 
                     // 生成並下載 PDF
+                    console.log('生成 PDF:', pdfFilename);
                     const element = document.getElementById('quote-preview');
                     const pdfBlob = await html2pdf().from(element).set({
                         margin: 1,
