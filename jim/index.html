@@ -190,7 +190,7 @@
             justify-content: flex-end;
         }
         #quote-preview .signature-box {
-            width: 80mm; /* 從 120mm 減少到 80mm */
+            width: 80mm;
             height: 20mm;
             border: 1px solid #000;
             display: flex;
@@ -214,8 +214,8 @@
                 margin: 20px;
             }
             .header h1 {
-                font-size: 1.5rem; /* 從 1.8rem 減少到 1.5rem */
-                white-space: nowrap; /* 防止斷行 */
+                font-size: 1.5rem;
+                white-space: nowrap;
             }
             .card {
                 padding: 15px;
@@ -227,7 +227,7 @@
                 width: 100%;
             }
             #quote-preview .signature-box {
-                width: 60%; /* 從 90% 減少到 60% */
+                width: 60%;
                 height: 15mm;
             }
             #quote-preview .signature-label {
@@ -1172,6 +1172,7 @@
                     clone.style.left = '0';
                     clone.style.top = '0';
                     clone.style.width = '190mm'; // A4 寬度減去邊距 (210mm - 10mm x 2)
+                    clone.style.height = 'auto'; // 允許高度根據內容自動調整
                     clone.style.backgroundColor = '#fff';
                     clone.style.padding = '10mm';
                     clone.style.boxShadow = 'none';
@@ -1194,17 +1195,17 @@
 
                     console.log('開始截圖報價單，目標元素:', clone);
                     try {
-                        // 使用 html2canvas 截圖
+                        // 使用 html2canvas 截圖，移除固定高度限制
                         const canvas = await html2canvas(clone, {
                             scale: 1,
                             useCORS: true,
                             backgroundColor: '#fff',
                             logging: true,
-                            width: 794, // A4 像素寬度 (96dpi)
-                            height: 1123 // A4 像素高度
+                            width: 794 // A4 像素寬度 (96dpi)
+                            // 移除 height: 1123，讓 html2canvas 根據實際內容高度渲染
                         });
                         const imgData = canvas.toDataURL('image/png', 0.8); // 壓縮品質
-                        console.log('截圖成功，圖片大小:', imgData.length);
+                        console.log('截圖成功，圖片大小:', imgData.length, '像素高度:', canvas.height);
 
                         // 使用 jsPDF 生成 PDF
                         const { jsPDF } = window.jspdf;
@@ -1218,7 +1219,9 @@
                         const imgHeight = canvas.height * imgWidth / canvas.width;
                         const totalPages = Math.ceil(imgHeight / pageHeight);
 
-                        // 快速分頁
+                        console.log(`總頁數: ${totalPages}, 圖片高度: ${imgHeight}mm`);
+
+                        // 分頁渲染
                         for (let page = 0; page < totalPages; page++) {
                             if (page > 0) pdf.addPage();
                             const position = -page * pageHeight;
