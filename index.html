@@ -384,24 +384,24 @@
         height: 30%;
         display: flex;
         flex-direction: column;
-        gap: 0.25rem; /* 增加標題與內文間距 */
+        gap: 0.25rem;
       }
       #carousel .carousel-content {
         width: 100%;
-        height: 2.7rem; /* 2 rows * 1.35rem line-height */
+        height: 2.55rem; /* 調整高度以適應標題框高度增加 */
         padding: 0.5rem;
         font-size: 0.9rem;
         border-bottom-left-radius: 0.75rem;
         border-bottom-right-radius: 0.75rem;
       }
       #carousel .carousel-text {
-        height: 1.5rem;
+        height: 2rem; /* 增加高度以避免文字裁切 */
         padding: 0.25rem;
         border-bottom-left-radius: 0.5rem;
         border-bottom-right-radius: 0.5rem;
-        overflow: hidden; /* 處理溢出 */
-        text-overflow: ellipsis; /* 長標題顯示省略號 */
-        white-space: nowrap; /* 避免換行 */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       #carousel .carousel-link {
         flex-direction: column;
