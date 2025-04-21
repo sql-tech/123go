@@ -354,7 +354,7 @@
             <!-- 切換標籤 -->
             <div id="tabContainer" class="tabs hidden">
                 <div class="tab-list">
-                    <div class="tab active" data-tab="quote">報價單產生</div>
+                    <div class="tab active" data-tab="quote">製作報價單</div>
                     <div class="tab" data-tab="archive">報價單歸檔</div>
                 </div>
                 <div id="quoteTab" class="tab-content active">
@@ -1317,7 +1317,7 @@
                         const startTime = Date.now();
                         const countdownInterval = setInterval(() => {
                             const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                            const remaining = 900 - elapsed;
+                            const remaining = 1200 - elapsed;
                             if (remaining <= 0) {
                                 clearInterval(countdownInterval);
                                 countdownTimer.textContent = '時間到，正在登出...';
