@@ -37,37 +37,6 @@
         }
         return gk_fileData[filename] || "";
         }
-        </script><script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
         </script><!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -80,10 +49,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sanitize-html/2.13.0/sanitize-html.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-base64/3.7.2/base64.min.js"></script>
     <style>
         body {
             background: linear-gradient(to bottom, #E5E7EB, #D1D5DB);
             font-family: 'Noto Sans TC', sans-serif;
+        }
+        @font-face {
+            font-family: 'Noto Sans TC';
+            src: url('/jim/NotoSansTC-VariableFont_wght.ttf') format('truetype');
+            font-weight: 100 900;
+            font-style: normal;
         }
         .container {
             max-width: 1000px;
@@ -139,6 +115,7 @@
             border: 1px solid #D1D5DB;
             border-radius: 6px;
             transition: border-color 0.2s ease;
+            font-family: 'Noto Sans TC', sans-serif;
         }
         input[type="password"]:focus, input[type="text"]:focus, input[type="email"]:focus, input[type="number"]:focus, textarea:focus, select:focus {
             border-color: #2563EB;
@@ -209,6 +186,7 @@
             border-radius: 8px;
             padding: 20px;
             margin-top: 20px;
+            font-family: 'Noto Sans TC', sans-serif;
         }
         #quote-preview img {
             max-width: 150px;
@@ -240,7 +218,6 @@
             border-top: 1px solid #000;
             margin: 0 5px;
         }
-        /* 切換標籤樣式 */
         .tabs {
             width: 100%;
             margin-bottom: 1rem;
@@ -272,7 +249,6 @@
         .tab-content.active {
             display: block;
         }
-        /* 報價單歸檔區域樣式 */
         #archiveSection {
             padding: 20px;
             background: #F9FAFB;
@@ -339,9 +315,7 @@
             <h1>123go形象網站設計報價系統</h1>
         </div>
         <div class="content">
-            <!-- 倒數計時器 -->
             <div id="countdown-timer" class="hidden text-center text-lg font-semibold text-gray-700 bg-blue-100 p-4 rounded-lg mb-4 shadow"></div>
-            <!-- 認證 -->
             <div class="card">
                 <h2>認證設置</h2>
                 <div class="input-group">
@@ -351,16 +325,13 @@
                 </div>
                 <button id="auth-btn" class="btn">驗證</button>
             </div>
-            <!-- 切換標籤 -->
             <div id="tabContainer" class="tabs hidden">
                 <div class="tab-list">
                     <div class="tab active" data-tab="quote">製作報價單</div>
                     <div class="tab" data-tab="archive">報價單歸檔</div>
                 </div>
                 <div id="quoteTab" class="tab-content active">
-                    <!-- 報價單生成 -->
                     <div id="quoteSection" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- 客戶資訊 -->
                         <div class="card col-span-1 md:col-span-2">
                             <h2>客戶資訊</h2>
                             <div class="input-group">
@@ -368,7 +339,7 @@
                                 <input type="text" id="clientName" placeholder="輸入客戶名稱">
                             </div>
                             <div class="input-group">
-                                <label for="clientContact">客戶電話/Line</label>
+                                <label for="clientContact">客戶telephone/Line</label>
                                 <input type="text" id="clientContact" placeholder="輸入電話或Line ID">
                             </div>
                             <div class="input-group">
@@ -380,7 +351,6 @@
                                 <textarea id="clientNotes" placeholder="輸入附註"></textarea>
                             </div>
                         </div>
-                        <!-- 前端設計 -->
                         <div class="card">
                             <h2>前端設計</h2>
                             <div class="input-group">
@@ -397,7 +367,6 @@
                                 <input type="text" id="frontendNotes" placeholder="輸入自訂功能（例如：留言板、寄信模組）">
                             </div>
                         </div>
-                        <!-- 後端設計 -->
                         <div class="card">
                             <h2>後端開發</h2>
                             <div class="input-group">
@@ -414,7 +383,6 @@
                                 <input type="text" id="backendNotes" placeholder="輸入自訂功能（例如：資料庫管理、API整合）">
                             </div>
                         </div>
-                        <!-- SEO -->
                         <div class="card">
                             <h2>SEO</h2>
                             <div class="input-group">
@@ -431,7 +399,6 @@
                                 <input type="text" id="seoNotes" placeholder="輸入自訂功能（例如：關鍵字優化、內容行銷）">
                             </div>
                         </div>
-                        <!-- 主機代管 -->
                         <div class="card">
                             <h2>主機代管</h2>
                             <div class="input-group">
@@ -448,7 +415,6 @@
                                 <input type="text" id="hostingNotes" placeholder="輸入自訂功能（例如：雲端備份、SSL證書）">
                             </div>
                         </div>
-                        <!-- 後續維護 -->
                         <div class="card">
                             <h2>後續維護</h2>
                             <div class="input-group">
@@ -465,7 +431,6 @@
                                 <input type="text" id="maintenanceNotes" placeholder="輸入自訂功能（例如：定期更新、技術支援）">
                             </div>
                         </div>
-                        <!-- 特殊功能 -->
                         <div class="card">
                             <h2>特殊功能</h2>
                             <div class="input-group">
@@ -486,7 +451,6 @@
                                 <input type="text" id="specialFeatureNotes" placeholder="輸入自訂功能（例如：AI模組、第三方整合）">
                             </div>
                         </div>
-                        <!-- 初次設定 -->
                         <div class="card">
                             <h2>初次設定</h2>
                             <div class="input-group">
@@ -503,7 +467,6 @@
                                 <input type="text" id="initialSetupNotes" placeholder="輸入自訂功能（例如：環境設置、初始資料導入）">
                             </div>
                         </div>
-                        <!-- 折扣 -->
                         <div class="card">
                             <h2>折扣</h2>
                             <div class="input-group">
@@ -523,7 +486,6 @@
                                 <input type="text" id="discountNotes" placeholder="輸入自訂功能（例如：促銷活動、長期合作）">
                             </div>
                         </div>
-                        <!-- 補充說明 -->
                         <div class="card col-span-1 md:col-span-2">
                             <h2>補充說明</h2>
                             <div class="input-group">
@@ -560,7 +522,6 @@
                             </div>
                             <button id="confirm-notes-btn" class="btn">確定帶入報價單</button>
                         </div>
-                        <!-- 報價預覽 -->
                         <div id="quote-preview" class="card col-span-1 md:col-span-2">
                             <img src="/img/logo.jpg" alt="123go Logo">
                             <h2>123go形象網站設計報價單</h2>
@@ -617,7 +578,6 @@
                                 <p><strong>報價人員電話/Line：</strong> <span id="preview-salesContact">未輸入</span></p>
                                 <p><strong>報價人員 E-mail：</strong> <span id="preview-salesEmail">未輸入</span></p>
                             </div>
-                            <!-- 客戶簽名欄位 -->
                             <div class="signature-field">
                                 <div class="signature-box">
                                     <span class="signature-label">客戶簽名</span>
@@ -625,14 +585,11 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- 產生報價單按鈕 -->
                         <button id="generate-quote-btn" class="btn">產生報價單</button>
-                        <!-- 清除報價單內容按鈕 -->
                         <button id="clear-quote-btn" class="btn">清除報價單內容</button>
                     </div>
                 </div>
                 <div id="archiveTab" class="tab-content">
-                    <!-- 報價單歸檔 -->
                     <div id="archiveSection">
                         <h2 class="text-xl font-semibold mb-4">報價單歸檔</h2>
                         <div class="archive-group">
@@ -648,11 +605,58 @@
     </div>
 
     <script>
-        // 儲存 PAT 的全域變數
-        let githubPAT = '';
-        let isFetchingOrderNumber = false; // 防抖控制
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+            return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+                try {
+                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                    var filteredData = jsonData.filter(row => row.some(filledCell));
+                    var headerRowIndex = filteredData.findIndex((row, index) =>
+                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                    );
+                    if (headerRowIndex === -1 || headerRowIndex > 25) {
+                        headerRowIndex = 0;
+                    }
+                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                    return csv;
+                } catch (e) {
+                    console.error(e);
+                    return "";
+                }
+            }
+            return gk_fileData[filename] || "";
+        }
 
-        // 獲取訂單編號，使用 sql-tech/database 的 Issue #2
+        let githubPAT = '';
+        let isFetchingOrderNumber = false;
+
+        async function loadFontAsBase64() {
+            try {
+                const response = await fetch('/jim/NotoSansTC-VariableFont_wght.ttf');
+                if (!response.ok) {
+                    throw new Error(`無法載入字型檔案：${response.status} ${response.statusText}`);
+                }
+                const arrayBuffer = await response.arrayBuffer();
+                const base64String = btoa(
+                    new Uint8Array(arrayBuffer)
+                        .reduce((data, byte) => data + String.fromCharCode(byte), '')
+                );
+                return base64String;
+            } catch (error) {
+                console.error('載入字型檔案錯誤:', error);
+                return null;
+            }
+        }
+
         async function getOrderNumber() {
             if (isFetchingOrderNumber) {
                 console.warn('正在獲取訂單編號，請稍後...');
@@ -668,18 +672,15 @@
             const today = new Date();
             const year = today.getFullYear();
             const month = String(today.getMonth() + 1).padStart(2, '0');
-            const key = `${year}-${month}`; // 例如 "2025-04"
+            const key = `${year}-${month}`;
             const retries = 3;
 
             try {
-                // 檢查 localStorage 備用計數器
                 const localKey = `orderNumber_${key}`;
                 let localSequence = parseInt(localStorage.getItem(localKey)) || 0;
 
-                // 嘗試使用 GitHub API 更新序號
                 for (let i = 0; i < retries; i++) {
                     try {
-                        // 讀取 sql-tech/database 的 Issue #2 評論
                         console.log('發送請求至 GitHub API: issues/2/comments');
                         const response = await fetch('https://api.github.com/repos/sql-tech/database/issues/2/comments', {
                             headers: {
@@ -697,16 +698,13 @@
                         const match = lastComment.match(new RegExp(`${key}: (\\d+)`));
                         let sequence = match ? parseInt(match[1]) : 0;
 
-                        // 與 localStorage 比較，取較大值
                         sequence = Math.max(sequence, localSequence);
                         sequence += 1;
 
-                        // 檢查序號範圍
                         if (sequence > 99999) {
                             throw new Error(`序號已達到上限 (99999)，請聯繫管理員處理！`);
                         }
 
-                        // 寫入新評論
                         console.log('寫入新評論至 GitHub Issue #2');
                         const updateResponse = await fetch('https://api.github.com/repos/sql-tech/database/issues/2/comments', {
                             method: 'POST',
@@ -724,7 +722,6 @@
                         }
                         console.log(`成功寫入新評論: ${key}: ${sequence.toString().padStart(5, '0')}`);
 
-                        // 更新 localStorage
                         localStorage.setItem(localKey, sequence.toString());
                         return `${year}-${month}-${sequence.toString().padStart(5, '0')}`;
                     } catch (error) {
@@ -741,12 +738,10 @@
                 console.error('獲取訂單編號錯誤:', error);
                 alert(`獲取訂單編號失敗：${error.message}\n正在使用本地計數器作為備用方案。`);
 
-                // 備用方案：使用 localStorage 計數
                 const localKey = `orderNumber_${key}`;
                 let localSequence = parseInt(localStorage.getItem(localKey)) || 0;
                 localSequence += 1;
 
-                // 檢查序號範圍
                 if (localSequence > 99999) {
                     alert(`本地序號已達到上限 (99999)，請聯繫管理員處理！`);
                     return null;
@@ -761,10 +756,8 @@
         }
 
         async function updateOrderNumber() {
-            // 空函數，序號更新由 getOrderNumber 處理
         }
 
-        // GitHub API 上傳函數
         async function uploadToGitHub(token, path, base64Content, fileName) {
             console.log('開始上傳至 GitHub: ' + path);
             try {
@@ -825,7 +818,6 @@
             }
         }
 
-        // 從 GitHub 讀取 PDF 檔案列表
         async function fetchPDFFiles() {
             const pdfFilesSelect = document.getElementById('pdfFiles');
             pdfFilesSelect.innerHTML = '<option value="">請選擇報價單</option>';
@@ -846,7 +838,6 @@
                 const files = await response.json();
                 console.log('從 GitHub 讀取的檔案列表:', files);
 
-                // 過濾 .pdf 檔案並填充到下拉式選單
                 const pdfFiles = files.filter(file => file.name.endsWith('.pdf'));
                 pdfFiles.forEach(file => {
                     const option = document.createElement('option');
@@ -871,7 +862,6 @@
             }
         }
 
-        // 下載選中的 PDF 檔案
         async function downloadPDFFile() {
             const pdfFilesSelect = document.getElementById('pdfFiles');
             const selectedFile = pdfFilesSelect.value;
@@ -897,7 +887,6 @@
                 const fileData = await response.json();
                 console.log('檔案資料:', fileData);
 
-                // 解碼 Base64 內容
                 const base64Content = fileData.content;
                 const binaryString = atob(base64Content);
                 const bytes = new Uint8Array(binaryString.length);
@@ -906,7 +895,6 @@
                 }
                 const blob = new Blob([bytes], { type: 'application/pdf' });
 
-                // 觸發下載
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
@@ -922,7 +910,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // 初始化元素
             const patInput = document.getElementById('pat');
             const authBtn = document.getElementById('auth-btn');
             const countdownTimer = document.getElementById('countdown-timer');
@@ -983,7 +970,6 @@
             const clearQuoteBtn = document.getElementById('clear-quote-btn');
             const downloadPDFBtn = document.getElementById('download-pdf-btn');
 
-            // 檢查元素是否正確獲取
             console.log('authBtn:', authBtn);
             if (!authBtn) {
                 console.error('無法找到 authBtn 元素，請檢查 DOM');
@@ -991,7 +977,6 @@
                 return;
             }
 
-            // 價格表
             const prices = {
                 frontend: { basic: 10000, advanced: 20000, premium: 30000 },
                 backend: { basic: 13000, advanced: 23000, premium: 33000 },
@@ -1001,7 +986,6 @@
                 initialSetup: { basic: 1500, advanced: 2000, premium: 3500 }
             };
 
-            // 折扣百分比表
             const discountRates = {
                 none: 0,
                 full5: 0.05,
@@ -1012,7 +996,6 @@
                 full30: 0.30
             };
 
-            // 職稱對應顯示名稱
             const roleDisplayNames = {
                 salesRep: '業務專員',
                 assistantManager: '業務副理',
@@ -1020,20 +1003,23 @@
                 ceo: '執行長'
             };
 
-            // 清理輸入以防止 XSS
             function sanitizeInput(input) {
                 if (typeof sanitizeHtml === 'function') {
                     return sanitizeHtml(input, {
                         allowedTags: [],
-                        allowedAttributes: {}
+                        allowedAttributes: {},
+                        allowedClasses: {}
                     });
                 } else {
                     console.warn('sanitizeHtml 未定義，使用基本清理');
-                    return input.replace(/[<>&"']/g, '');
+                    return input.replace(/[<>]"'/g, '');
                 }
             }
 
-            // 儲存報價單資料到後端或 localStorage
+            function sanitizeFileName(input) {
+                return input.replace(/[\\/:*?"<>|]/g, '_');
+            }
+
             async function saveQuoteData() {
                 try {
                     const quoteData = {
@@ -1084,7 +1070,6 @@
                 }
             }
 
-            // 從後端或 localStorage 讀取報價單資料
             async function fetchQuoteData() {
                 const defaultQuoteData = {
                     clientName: '未輸入',
@@ -1154,7 +1139,6 @@
                 }
             }
 
-            // 重置表單
             function resetForm() {
                 clientName.value = '';
                 clientContact.value = '';
@@ -1188,7 +1172,6 @@
                 updateQuotePreview();
             }
 
-            // 更新報價預覽
             async function updateQuotePreview() {
                 const today = new Date();
                 const expiry = new Date(today);
@@ -1259,7 +1242,6 @@
                 launchEl.textContent = `NT$ ${Math.round(total * 0.2).toLocaleString()}`;
             }
 
-            // 驗證與登出按鈕
             authBtn.addEventListener('click', async () => {
                 console.log('驗證按鈕點擊開始');
                 if (patInput.disabled) {
@@ -1330,7 +1312,7 @@
 
                         console.log('初始化報價預覽');
                         await updateQuotePreview();
-                        await fetchPDFFiles(); // 初次載入 PDF 檔案列表
+                        await fetchPDFFiles();
                         alert('驗證成功，正在載入報價系統...');
                     } catch (error) {
                         console.error('驗證錯誤:', error);
@@ -1344,7 +1326,6 @@
                 }
             });
 
-            // 切換標籤功能
             tabs.forEach(tab => {
                 tab.addEventListener('click', () => {
                     tabs.forEach(t => t.classList.remove('active'));
@@ -1354,14 +1335,12 @@
                     const targetTab = document.getElementById(`${tab.dataset.tab}Tab`);
                     targetTab.classList.add('active');
 
-                    // 如果切換到「報價單歸檔」標籤，刷新 PDF 檔案列表
                     if (tab.dataset.tab === 'archive') {
                         fetchPDFFiles();
                     }
                 });
             });
 
-            // 綁定輸入與下拉選單事件
             [clientName, clientContact, clientEmail, clientNotes, additionalNotes, useTax, salesRole, salesName, salesContact, salesEmail, frontendLevel, backendLevel, seoLevel, hostingLevel, maintenanceLevel, initialSetupLevel, specialFeatureLevel, specialFeaturePrice, discountSelect, frontendNotes, backendNotes, seoNotes, hostingNotes, maintenanceNotes, initialSetupNotes, specialFeatureNotes, discountNotes].forEach(input => {
                 input.addEventListener('input', () => {
                     console.log(`輸入變更: ${input.id} = ${input.value}`);
@@ -1369,7 +1348,6 @@
                 });
             });
 
-            // 確定帶入報價單按鈕
             confirmNotesBtn.addEventListener('click', async () => {
                 console.log('確定帶入報價單按鈕點擊');
                 confirmNotesBtn.disabled = true;
@@ -1381,7 +1359,6 @@
                 }
             });
 
-            // 清除報價單內容按鈕
             clearQuoteBtn.addEventListener('click', async () => {
                 console.log('清除報價單內容按鈕點擊');
                 clearQuoteBtn.disabled = true;
@@ -1394,13 +1371,12 @@
                 }
             });
 
-            // 下載報價單按鈕
             downloadPDFBtn.addEventListener('click', downloadPDFFile);
 
-            // 產生報價單
             generateQuoteBtn.addEventListener('click', async () => {
                 console.log('產生報價單按鈕點擊');
                 generateQuoteBtn.disabled = true;
+                let clone = null;
                 try {
                     const orderNumber = await getOrderNumber();
                     if (!orderNumber) {
@@ -1410,11 +1386,10 @@
                     localStorage.setItem('lastOrderNumber', orderNumber);
 
                     const rawClientName = clientName.value.trim();
-                    const clientNameSanitized = rawClientName ? sanitizeInput(rawClientName).replace(/[^a-zA-Z0-9_-]/g, '') : '';
+                    const clientNameSanitized = rawClientName ? sanitizeFileName(rawClientName) : '';
                     const pdfFilename = `報價單_${orderNumber}${clientNameSanitized ? '_' + clientNameSanitized : ''}.pdf`;
 
                     const quoteData = await fetchQuoteData();
-
                     await updateQuotePreview();
                     await new Promise(resolve => setTimeout(resolve, 500));
 
@@ -1442,21 +1417,22 @@
                         throw new Error('無法找到報價單預覽元素');
                     }
 
-                    // 克隆元素以避免影響原始排版
-                    const clone = originalElement.cloneNode(true);
+                    clone = originalElement.cloneNode(true);
                     document.body.appendChild(clone);
                     clone.style.position = 'absolute';
                     clone.style.left = '0';
                     clone.style.top = '0';
-                    clone.style.width = '190mm'; // A4 寬度減去邊距 (210mm - 10mm x 2)
+                    clone.style.width = '190mm';
                     clone.style.height = 'auto';
                     clone.style.backgroundColor = '#fff';
-                    clone.style.padding = '10mm';
+                    clone.style.padding = '5mm';
                     clone.style.boxShadow = 'none';
                     clone.style.borderRadius = '0';
                     clone.style.overflow = 'visible';
                     clone.style.transition = 'none';
+                    clone.style.fontFamily = '"Noto Sans TC", sans-serif';
                     clone.querySelectorAll('*').forEach(el => {
+                        el.style.fontFamily = '"Noto Sans TC", sans-serif';
                         el.style.boxShadow = 'none';
                         el.style.borderRadius = '0';
                         el.style.transition = 'none';
@@ -1478,46 +1454,51 @@
                             orientation: 'portrait'
                         });
 
-                        const imgWidth = 190; // A4 寬度減去邊距 (210mm - 10mm x 2)
-                        const pageHeightMM = 277 - 20; // A4 高度減去邊距 (297mm - 10mm x 2)
-                        const scale = 794 / (imgWidth * 3.78); // 像素與 mm 的比例 (794px 對應 190mm)
+                        const fontBase64 = await loadFontAsBase64();
+                        if (fontBase64) {
+                            pdf.addFileToVFS('NotoSansTC-Regular.ttf', fontBase64);
+                            pdf.addFont('NotoSansTC-Regular.ttf', 'NotoSansTC', 'normal');
+                            pdf.setFont('NotoSansTC');
+                        } else {
+                            console.warn('字型載入失敗，將使用預設字型，可能影響中文顯示');
+                        }
 
-                        // 第一次截圖以獲取總高度
+                        const imgWidth = 200;
+                        const pageHeightMM = 287;
+                        const scale = 842 / (imgWidth * 4.21);
+
                         const fullCanvas = await html2canvas(clone, {
                             scale: 1,
                             useCORS: true,
                             backgroundColor: '#fff',
                             logging: true,
-                            width: 794
+                            width: 842
                         });
                         const totalHeightPx = fullCanvas.height;
-                        const pageHeightPx = pageHeightMM * 3.78; // 轉換 mm 到像素
+                        const pageHeightPx = pageHeightMM * 4.21;
                         const totalPages = Math.ceil(totalHeightPx / pageHeightPx);
 
                         console.log(`總頁數: ${totalPages}, 總高度: ${totalHeightPx}px, 每頁高度: ${pageHeightPx}px`);
 
-                        // 分段截圖並添加到 PDF
                         for (let page = 0; page < totalPages; page++) {
                             if (page > 0) pdf.addPage();
 
-                            // 計算當前頁的截圖區域
                             const yOffsetPx = page * pageHeightPx;
                             const canvas = await html2canvas(clone, {
                                 scale: 1,
                                 useCORS: true,
                                 backgroundColor: '#fff',
                                 logging: true,
-                                width: 794,
+                                width: 842,
                                 y: yOffsetPx,
                                 height: Math.min(pageHeightPx, totalHeightPx - yOffsetPx),
-                                windowHeight: totalHeightPx // 確保窗口高度足夠
+                                windowHeight: totalHeightPx
                             });
 
                             const imgData = canvas.toDataURL('image/png', 0.8);
-                            const imgHeightMM = (canvas.height / 3.78); // 轉換像素到 mm
+                            const imgHeightMM = (canvas.height / 4.21);
 
-                            // 添加圖片到 PDF
-                            pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeightMM, undefined, 'FAST');
+                            pdf.addImage(imgData, 'PNG', 5, 5, imgWidth, imgHeightMM, undefined, 'FAST');
                         }
 
                         const pdfBlob = pdf.output('blob');
@@ -1542,7 +1523,7 @@
                         if (uploadSuccess) {
                             console.log(`PDF 上傳至 GitHub 成功: ${uploadPath}`);
                             alert(`報價單編號 ${orderNumber} 已完成並上傳至 GitHub！`);
-                            fetchPDFFiles(); // 刷新 PDF 檔案列表
+                            fetchPDFFiles();
                         } else {
                             console.log(`PDF 上傳至 GitHub 失敗: ${uploadPath}`);
                             alert(`報價單編號 ${orderNumber} 已完成，但上傳至 GitHub 失敗，請檢查 PAT 或網路！`);
@@ -1553,19 +1534,18 @@
                     } catch (error) {
                         console.error('PDF 生成錯誤:', error);
                         throw new Error(`PDF 生成失敗：${error.message}`);
-                    } finally {
-                        if (document.body.contains(clone)) {
-                            document.body.removeChild(clone);
-                        }
                     }
                 } catch (error) {
                     console.error('產生報價單錯誤:', error);
                     alert(`產生報價單失敗：${error.message}`);
                 } finally {
                     generateQuoteBtn.disabled = false;
+                    if (clone && document.body.contains(clone)) {
+                        document.body.removeChild(clone);
+                    }
                 }
             });
         });
     </script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9336e73aed49bd41',t:'MTc0NTE3NTgyMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9337c0e95c19add2',t:'MTc0NTE4NDczOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){
+</body>
+</html>
