@@ -348,11 +348,15 @@
       width: 100%;
       max-width: 1200px;
       margin: 0 auto;
-      padding: 1rem;
-      background-color: #fff;
+      padding: 2rem;
+      background-color: rgba(241, 245, 249, 0.95);
       border-radius: 0.5rem;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       border: 1px solid #dbeafe;
+    }
+    .fb-comments, .fb-comments iframe {
+      width: 100% !important;
+      max-width: 100%;
     }
     @media (max-width: 768px) {
       nav .desktop-menu {
@@ -444,7 +448,7 @@
         height: 2.5rem !important;
         margin-right: 0.25rem !important;
       }
-      #indexContent, #aboutContent {
+      #indexContent, #aboutContent, .fb-comments-container {
         padding: 1rem;
         font-size: 1rem;
         line-height: 1.6;
@@ -561,7 +565,7 @@
       <!-- Facebook留言板 -->
       <div class="fb-comments-container">
         <h2 class="text-2xl font-bold mb-4 text-[#000000]">留言與討論</h2>
-        <div class="fb-comments" data-href="https://sql-tech.github.io/123go/" data-width="100%" data-numposts="5"></div>
+        <div class="fb-comments" data-href="https://sql-tech.github.io/123go/" data-numposts="5"></div>
       </div>
     </section>
 
@@ -632,7 +636,7 @@
           </div>
         </form>
       </div>
-      <div class="bg-white p-6 Rounded-lg shadow-lg border border-gray-200">
+      <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
         <h2 class="text-2xl font-bold mb-4 text-[#000000]">我們的據點</h2>
         <iframe
           class="w-full h-96 rounded-lg"
@@ -667,7 +671,7 @@
           var headerRowIndex = filteredData.findIndex((row, index) =>
             row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
           );
-          if (headerRowIndex === -1 || headerRowIndex > 25) {
+          if  if (headerRowIndex === -1 || headerRowIndex > 25) {
             headerRowIndex = 0;
           }
           var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
